@@ -1,0 +1,36 @@
+# Build outputs
+bin/
+obj/
+
+# .NET
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+
+# NuGet
+packages/
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# Environment / Secrets - NEVER commit these
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db

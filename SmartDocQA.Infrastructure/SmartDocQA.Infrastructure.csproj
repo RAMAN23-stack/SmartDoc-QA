@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.AI.OpenAI" Version="2.0.0" />
+    <PackageReference Include="CsvHelper" Version="31.0.0" />
+    <PackageReference Include="DocX" Version="3.0.0" />
+    <PackageReference Include="EPPlus" Version="7.0.0" />
+    <PackageReference Include="iText7" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.9" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
+    <PackageReference Include="System.Text.Json" Version="8.0.4" />
+    <PackageReference Include="Tesseract" Version="5.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SmartDocQA.Core\SmartDocQA.Core.csproj" />
+  </ItemGroup>
+
+</Project>

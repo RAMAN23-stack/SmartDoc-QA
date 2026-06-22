@@ -1,0 +1,398 @@
+@page "/settings"
+@using SmartDocQA.Core.Models
+@inject DocumentSessionState SessionState
+@inject ISnackbar Snackbar
+
+<PageTitle>Settings - SmartDoc QA</PageTitle>
+
+<!-- Hero -->
+<div class="settings-hero mb-6">
+    <h2>⚙️ AI Provider Settings</h2>
+    <p>Configure which AI engine powers your document queries</p>
+</div>
+
+<!-- Current Config Banner -->
+<MudAlert Severity="Severity.Info" Class="mb-5 current-config-alert" Dense="false">
+    <div class="d-flex align-center gap-3 flex-wrap">
+        <span>🤖 <strong>Active:</strong> @SessionState.SelectedProvider</span>
+        <span>|</span>
+        <span>📦 <strong>Model:</strong> @SessionState.SelectedModel</span>
+        <span>|</span>
+        <span>🌡️ <strong>Temperature:</strong> @SessionState.Temperature.ToString("F1")</span>
+    </div>
+</MudAlert>
+
+<!-- Provider Cards -->
+<MudText Typo="Typo.h6" Class="mb-3 font-weight-bold">🔌 Choose Your AI Provider</MudText>
+<MudGrid Spacing="3" Class="mb-6">
+
+    <!-- Groq -->
+    <MudItem xs="12" sm="6" md="6">
+        <div class="provider-card @(SessionState.SelectedProvider == AIProvider.Groq ? "provider-card-active" : "")"
+             @onclick="() => SelectProvider(AIProvider.Groq)">
+            <div class="provider-card-header provider-header-groq">
+                <span class="provider-icon">🔴</span>
+                <div>
+                    <div class="provider-name">Groq</div>
+                    <div class="provider-tag">Free & Ultra-Fast</div>
+                </div>
+                @if (SessionState.SelectedProvider == AIProvider.Groq)
+                {
+                    <span class="active-badge">✅ Active</span>
+                }
+            </div>
+            <div class="provider-card-body">
+                <p class="provider-desc">LPU-powered inference — fastest available. Best for quick Q&A and demos.</p>
+                <div class="model-chips">
+                    @foreach (var m in groqModels)
+                    {
+                        <span class="model-chip @(SessionState.SelectedModel == m && SessionState.SelectedProvider == AIProvider.Groq ? "model-chip-active" : "")"
+                              @onclick:stopPropagation="true"
+                              @onclick="() => SelectModel(AIProvider.Groq, m)">@m</span>
+                    }
+                </div>
+                <div class="provider-meta mt-3">
+                    <span class="meta-badge meta-green">✅ Free Tier</span>
+                    <span class="meta-badge meta-blue">🚀 Fastest</span>
+                    <span class="meta-badge meta-purple">🔑 API Key Needed</span>
+                </div>
+            </div>
+        </div>
+    </MudItem>
+
+    <!-- OpenAI -->
+    <MudItem xs="12" sm="6" md="6">
+        <div class="provider-card @(SessionState.SelectedProvider == AIProvider.OpenAI ? "provider-card-active" : "")"
+             @onclick="() => SelectProvider(AIProvider.OpenAI)">
+            <div class="provider-card-header provider-header-openai">
+                <span class="provider-icon">🟢</span>
+                <div>
+                    <div class="provider-name">OpenAI</div>
+                    <div class="provider-tag">GPT-4o & GPT-4o-mini</div>
+                </div>
+                @if (SessionState.SelectedProvider == AIProvider.OpenAI)
+                {
+                    <span class="active-badge">✅ Active</span>
+                }
+            </div>
+            <div class="provider-card-body">
+                <p class="provider-desc">World-class GPT models. Excellent reasoning and long-context understanding.</p>
+                <div class="model-chips">
+                    @foreach (var m in openaiModels)
+                    {
+                        <span class="model-chip @(SessionState.SelectedModel == m && SessionState.SelectedProvider == AIProvider.OpenAI ? "model-chip-active" : "")"
+                              @onclick:stopPropagation="true"
+                              @onclick="() => SelectModel(AIProvider.OpenAI, m)">@m</span>
+                    }
+                </div>
+                <div class="provider-meta mt-3">
+                    <span class="meta-badge meta-yellow">💰 Paid API</span>
+                    <span class="meta-badge meta-blue">🧠 Best Reasoning</span>
+                    <span class="meta-badge meta-purple">🔑 API Key Needed</span>
+                </div>
+            </div>
+        </div>
+    </MudItem>
+
+    <!-- Google Gemini -->
+    <MudItem xs="12" sm="6" md="6">
+        <div class="provider-card @(SessionState.SelectedProvider == AIProvider.Google ? "provider-card-active" : "")"
+             @onclick="() => SelectProvider(AIProvider.Google)">
+            <div class="provider-card-header provider-header-google">
+                <span class="provider-icon">🔵</span>
+                <div>
+                    <div class="provider-name">Google Gemini</div>
+                    <div class="provider-tag">Gemini 2.0 Flash & Pro</div>
+                </div>
+                @if (SessionState.SelectedProvider == AIProvider.Google)
+                {
+                    <span class="active-badge">✅ Active</span>
+                }
+            </div>
+            <div class="provider-card-body">
+                <p class="provider-desc">Google's multimodal model family with generous free tier. Great for documents.</p>
+                <div class="model-chips">
+                    @foreach (var m in googleModels)
+                    {
+                        <span class="model-chip @(SessionState.SelectedModel == m && SessionState.SelectedProvider == AIProvider.Google ? "model-chip-active" : "")"
+                              @onclick:stopPropagation="true"
+                              @onclick="() => SelectModel(AIProvider.Google, m)">@m</span>
+                    }
+                </div>
+                <div class="provider-meta mt-3">
+                    <span class="meta-badge meta-green">✅ Free Tier</span>
+                    <span class="meta-badge meta-blue">📄 Great for Docs</span>
+                    <span class="meta-badge meta-purple">🔑 API Key Needed</span>
+                </div>
+            </div>
+        </div>
+    </MudItem>
+
+    <!-- Ollama -->
+    <MudItem xs="12" sm="6" md="6">
+        <div class="provider-card @(SessionState.SelectedProvider == AIProvider.Ollama ? "provider-card-active" : "")"
+             @onclick="() => SelectProvider(AIProvider.Ollama)">
+            <div class="provider-card-header provider-header-ollama">
+                <span class="provider-icon">🏠</span>
+                <div>
+                    <div class="provider-name">Ollama (Local)</div>
+                    <div class="provider-tag">100% Private & Free</div>
+                </div>
+                @if (SessionState.SelectedProvider == AIProvider.Ollama)
+                {
+                    <span class="active-badge">✅ Active</span>
+                }
+            </div>
+            <div class="provider-card-body">
+                <p class="provider-desc">Run models entirely on your machine. No API key, no data leaves your device.</p>
+                <div class="model-chips">
+                    @foreach (var m in ollamaModels)
+                    {
+                        <span class="model-chip @(SessionState.SelectedModel == m && SessionState.SelectedProvider == AIProvider.Ollama ? "model-chip-active" : "")"
+                              @onclick:stopPropagation="true"
+                              @onclick="() => SelectModel(AIProvider.Ollama, m)">@m</span>
+                    }
+                </div>
+                <div class="provider-meta mt-3">
+                    <span class="meta-badge meta-green">✅ 100% Free</span>
+                    <span class="meta-badge meta-green">🔒 Private</span>
+                    <span class="meta-badge meta-gray">🖥️ Local GPU/CPU</span>
+                </div>
+            </div>
+        </div>
+    </MudItem>
+</MudGrid>
+
+<!-- Temperature Slider -->
+<MudPaper Class="pa-5 mb-6 temp-card" Elevation="2">
+    <MudText Typo="Typo.h6" Class="font-weight-bold mb-1">🌡️ Creativity / Temperature</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+        Controls how creative the AI is. Low = precise facts, High = creative/exploratory.
+    </MudText>
+
+    <div class="temp-slider-row">
+        <span class="temp-label-end">🎯 Precise (0.0)</span>
+        <MudSlider T="double"
+                   Value="SessionState.Temperature"
+                   ValueChanged="OnTemperatureChanged"
+                   Min="0.0" Max="1.0" Step="0.1"
+                   Color="Color.Secondary"
+                   Class="flex-grow-1 mx-4" />
+        <span class="temp-label-end">🎨 Creative (1.0)</span>
+    </div>
+
+    <div class="text-center mt-2">
+        <MudChip T="string" Color="Color.Secondary" Size="Size.Large" Class="font-weight-bold">
+            Current: @SessionState.Temperature.ToString("F1") — @GetTemperatureLabel()
+        </MudChip>
+    </div>
+
+    <div class="temp-hints mt-3">
+        <div class="temp-hint-item">
+            <strong>0.0</strong> — Deterministic, best for factual document Q&A
+        </div>
+        <div class="temp-hint-item">
+            <strong>0.3–0.5</strong> — Balanced, good for summaries and analysis
+        </div>
+        <div class="temp-hint-item">
+            <strong>0.7–1.0</strong> — Creative, good for brainstorming
+        </div>
+    </div>
+</MudPaper>
+
+
+<!-- Save Button -->
+<div class="text-center mt-4 mb-8">
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               Size="Size.Large"
+               OnClick="SaveSettings"
+               StartIcon="@Icons.Material.Filled.Save"
+               Class="save-settings-btn">
+        💾 Save Settings
+    </MudButton>
+</div>
+
+<style>
+    .settings-hero {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        color: white;
+        padding: 2.5rem 2rem;
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 6px 20px rgba(30,41,59,0.3);
+    }
+    .settings-hero h2 { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; }
+    .settings-hero p  { opacity: 0.8; font-size: 1rem; }
+
+    .current-config-alert { border-radius: 12px !important; }
+
+    /* Provider cards */
+    .provider-card {
+        border: 2px solid #e2e8f0;
+        border-radius: 16px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .provider-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+        border-color: #818cf8;
+    }
+    .provider-card-active {
+        border-color: #6366f1 !important;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.2), 0 8px 24px rgba(0,0,0,0.1) !important;
+    }
+
+    .provider-card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 20px;
+        color: white;
+        position: relative;
+    }
+    .provider-header-groq   { background: linear-gradient(135deg, #f55036, #ff8c00); }
+    .provider-header-openai { background: linear-gradient(135deg, #10a37f, #008060); }
+    .provider-header-google { background: linear-gradient(135deg, #4285f4, #0f52ba); }
+    .provider-header-ollama { background: linear-gradient(135deg, #6366f1, #4338ca); }
+
+    .provider-icon { font-size: 2rem; }
+    .provider-name { font-size: 1.1rem; font-weight: 700; }
+    .provider-tag  { font-size: 0.78rem; opacity: 0.85; }
+    .active-badge  {
+        position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+        background: rgba(255,255,255,0.25);
+        padding: 3px 10px; border-radius: 100px;
+        font-size: 0.78rem; font-weight: 600;
+    }
+
+    .provider-card-body { padding: 16px 20px; }
+    .provider-desc { font-size: 0.86rem; color: #64748b; margin-bottom: 12px; }
+
+    .model-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .model-chip {
+        padding: 4px 10px;
+        border-radius: 100px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .model-chip:hover { background: #e0e7ff; color: #4338ca; border-color: #a5b4fc; }
+    .model-chip-active { background: #6366f1 !important; color: white !important; border-color: #4338ca !important; }
+
+    .provider-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+    .meta-badge {
+        padding: 3px 10px; border-radius: 100px;
+        font-size: 0.72rem; font-weight: 600;
+    }
+    .meta-green  { background: #dcfce7; color: #15803d; }
+    .meta-blue   { background: #dbeafe; color: #1d4ed8; }
+    .meta-yellow { background: #fef9c3; color: #854d0e; }
+    .meta-purple { background: #ede9fe; color: #5b21b6; }
+    .meta-gray   { background: #f1f5f9; color: #475569; }
+
+    /* Temperature */
+    .temp-card { border-radius: 16px !important; }
+    .temp-slider-row { display: flex; align-items: center; gap: 8px; }
+    .temp-label-end { font-size: 0.78rem; color: #64748b; white-space: nowrap; }
+    .temp-hints { display: flex; flex-direction: column; gap: 4px; }
+    .temp-hint-item { font-size: 0.82rem; color: #64748b; padding: 4px 0; border-bottom: 1px solid #f1f5f9; }
+
+    /* .env code block */
+    .env-code-block {
+        background: #1e293b !important;
+        border-radius: 12px !important;
+    }
+    .env-code {
+        color: #a5f3fc;
+        font-family: 'Consolas', 'Courier New', monospace;
+        font-size: 0.88rem;
+        line-height: 1.8;
+        margin: 0;
+        white-space: pre;
+    }
+
+    .save-settings-btn {
+        padding: 0.9rem 3rem !important;
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        border-radius: 12px !important;
+        text-transform: none !important;
+        box-shadow: 0 6px 20px rgba(99,102,241,0.3) !important;
+    }
+    .save-settings-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 28px rgba(99,102,241,0.4) !important;
+    }
+</style>
+
+@code {
+    private readonly List<string> groqModels   = new() { "llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "mixtral-8x7b-32768", "gemma2-9b-it" };
+    private readonly List<string> openaiModels = new() { "gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo" };
+    private readonly List<string> googleModels = new() { "gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-1.5-flash" };
+    private readonly List<string> ollamaModels = new() { "llama3.2", "llama3.1", "mistral", "codellama", "gemma2" };
+
+    private const string EnvTemplate =
+@"# SmartDoc QA — API Keys
+# Place this file at: SmartDocQA.Web/.env
+
+GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxx
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
+GOOGLE_API_KEY=AIzaSy-xxxxxxxxxxxxxxxxxxxx
+
+# Ollama runs locally — no key needed
+# Make sure Ollama is running: ollama serve";
+
+    private void SelectProvider(AIProvider provider)
+    {
+        SessionState.SelectedProvider = provider;
+        // Auto-select first model for provider
+        var models = provider switch
+        {
+            AIProvider.Groq   => groqModels,
+            AIProvider.OpenAI => openaiModels,
+            AIProvider.Google => googleModels,
+            AIProvider.Ollama => ollamaModels,
+            _ => new List<string>()
+        };
+        SessionState.SelectedModel = models.FirstOrDefault() ?? "";
+        SessionState.NotifyStateChanged();
+    }
+
+    private void SelectModel(AIProvider provider, string model)
+    {
+        SessionState.SelectedProvider = provider;
+        SessionState.SelectedModel = model;
+        SessionState.NotifyStateChanged();
+    }
+
+    private void OnTemperatureChanged(double temp)
+    {
+        SessionState.Temperature = Math.Round(temp, 1);
+        SessionState.NotifyStateChanged();
+    }
+
+    private string GetTemperatureLabel() => SessionState.Temperature switch
+    {
+        <= 0.0 => "Deterministic",
+        <= 0.2 => "Very Precise",
+        <= 0.4 => "Factual",
+        <= 0.6 => "Balanced",
+        <= 0.8 => "Creative",
+        _      => "Very Creative"
+    };
+
+    private void SaveSettings()
+    {
+        SessionState.NotifyStateChanged();
+        Snackbar.Add($"✅ Settings saved! Using {SessionState.SelectedProvider} · {SessionState.SelectedModel}", Severity.Success);
+    }
+}

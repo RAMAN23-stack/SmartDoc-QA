@@ -1,0 +1,423 @@
+@inherits LayoutComponentBase
+@using SmartDocQA.Core.Models
+@using SmartDocQA.Core.Interfaces
+@using SmartDocQA.Infrastructure.AI
+@inject DocumentSessionState SessionState
+@inject IVectorStore VectorStore
+@inject SqliteQueryEngine SqliteEngine
+@inject NavigationManager Navigation
+
+<MudThemeProvider Theme="_theme" IsDarkMode="_darkMode" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout Class="main-app-layout">
+    <MudAppBar Elevation="2" Color="Color.Primary" Class="appbar-glass">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudText Typo="Typo.h5" Class="app-title">📄 SmartDoc QA</MudText>
+        <MudSpacer />
+        <div class="appbar-status">
+            <span class="provider-badge @GetProviderBadgeClass(SessionState.SelectedProvider)">
+                @SessionState.SelectedProvider.ToString()
+            </span>
+            <MudText Typo="Typo.caption" Class="text-white opacity-70">@SessionState.SelectedModel</MudText>
+        </div>
+        <MudIconButton Icon="@(_darkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" 
+                       Color="Color.Inherit" 
+                       OnClick="@ToggleDarkMode" 
+                       Class="ml-3" />
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="3" Width="320px" Class="sidebar-drawer">
+        <div class="sidebar-header">
+            <MudText Typo="Typo.h5" Class="text-white font-weight-bold">📄 SmartDoc QA</MudText>
+            <MudText Typo="Typo.caption" Class="text-slate-400">AI-Powered Document Intelligence</MudText>
+        </div>
+
+        <MudDivider DividerType="DividerType.Middle" Class="my-2 border-slate-700" />
+
+        <div class="px-4 py-2">
+            <MudText Typo="Typo.subtitle2" Class="text-white font-weight-bold mb-2">🤖 AI Provider</MudText>
+            
+            <MudSelect T="AIProvider" 
+                       Label="Choose AI Provider" 
+                       Value="SessionState.SelectedProvider" 
+                       ValueChanged="OnProviderChanged"
+                       Variant="Variant.Outlined" 
+                       Dense="true" 
+                       Margin="Margin.Dense"
+                       Class="custom-select mb-3">
+                <MudSelectItem Value="AIProvider.Ollama">🏠 Local (Ollama - Free)</MudSelectItem>
+                <MudSelectItem Value="AIProvider.OpenAI">🟢 OpenAI (GPT-4o/mini)</MudSelectItem>
+                <MudSelectItem Value="AIProvider.Google">🔵 Google Gemini (2.0 Flash)</MudSelectItem>
+                <MudSelectItem Value="AIProvider.Groq">🔴 Groq (Llama 3.3 - Free/Fast)</MudSelectItem>
+            </MudSelect>
+
+            <MudSelect T="string" 
+                       Label="Model Selection" 
+                       Value="SessionState.SelectedModel" 
+                       ValueChanged="OnModelChanged"
+                       Variant="Variant.Outlined" 
+                       Dense="true" 
+                       Margin="Margin.Dense"
+                       Class="custom-select mb-3">
+                @foreach (var model in GetAvailableModels(SessionState.SelectedProvider))
+                {
+                    <MudSelectItem Value="model">@model</MudSelectItem>
+                }
+            </MudSelect>
+
+            <div class="d-flex justify-space-between align-center mb-1 text-slate-300">
+                <MudText Typo="Typo.caption">Creativity Level (Temp)</MudText>
+                <MudText Typo="Typo.caption" Class="font-weight-bold">@SessionState.Temperature.ToString("F1")</MudText>
+            </div>
+            <MudSlider T="double" 
+                       Value="SessionState.Temperature" 
+                       ValueChanged="OnTemperatureChanged"
+                       Min="0.0" 
+                       Max="1.0" 
+                       Step="0.1" 
+                       Color="Color.Secondary" 
+                       Class="mb-4" />
+        </div>
+
+        <MudDivider DividerType="DividerType.Middle" Class="my-2 border-slate-700" />
+
+        <div class="px-4 py-2">
+            <MudText Typo="Typo.subtitle2" Class="text-white font-weight-bold mb-2">📊 Status</MudText>
+            
+            @if (SessionState.TabularData != null)
+            {
+                <MudAlert Severity="Severity.Success" Dense="true" Class="status-alert mb-2">
+                    ✅ @(SessionState.TabularFileType ?? "Data") Loaded
+                </MudAlert>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Normal" Dense="true" Class="status-alert mb-2">
+                    ⚪ No Data File
+                </MudAlert>
+            }
+
+            @if (SessionState.ExtractedDocuments.Any())
+            {
+                <MudAlert Severity="Severity.Success" Dense="true" Class="status-alert mb-2">
+                    ✅ Vector DB Ready
+                </MudAlert>
+                <MudAlert Severity="Severity.Success" Dense="true" Class="status-alert mb-2">
+                    ✅ @SessionState.ExtractedDocuments.Count Document(s)
+                </MudAlert>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Normal" Dense="true" Class="status-alert mb-2">
+                    ⚪ No Vector DB
+                </MudAlert>
+                <MudAlert Severity="Severity.Normal" Dense="true" Class="status-alert mb-2">
+                    ⚪ No Documents
+                </MudAlert>
+            }
+
+            @if (SessionState.LastUploadTime.HasValue)
+            {
+                <MudText Typo="Typo.caption" Class="text-slate-400 mt-1 d-block">
+                    Last upload: @SessionState.LastUploadTime.Value.ToString("HH:mm:ss")
+                </MudText>
+            }
+        </div>
+
+        <MudDivider DividerType="DividerType.Middle" Class="my-2 border-slate-700" />
+
+        <div class="px-4 py-2">
+            <MudText Typo="Typo.subtitle2" Class="text-white font-weight-bold mb-2">🎯 Features</MudText>
+            <div class="feature-bullets text-slate-300">
+                <div>• PDF & DOCX Processing</div>
+                <div>• Excel & CSV Data Analysis</div>
+                <div>• Image OCR (Text Extraction)</div>
+                <div>• SQLite Tabular Queries</div>
+                <div>• Cell Reference (E46, A10)</div>
+                <div>• Multi-Provider AI Support</div>
+                <div>• Fresh Documents Mode</div>
+            </div>
+        </div>
+
+        <MudDivider DividerType="DividerType.Middle" Class="my-2 border-slate-700" />
+
+        <div class="px-4 py-2 d-flex flex-column gap-2 mb-6">
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Error" 
+                       Size="Size.Small"
+                       OnClick="ClearAllAndStartFresh"
+                       StartIcon="@Icons.Material.Filled.DeleteForever"
+                       Class="sidebar-action-btn">
+                Clear & Start Fresh
+            </MudButton>
+
+            <div class="d-flex gap-2">
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Warning" 
+                           Size="Size.Small"
+                           OnClick="RebuildDB"
+                           Class="flex-grow-1 font-size-xs">
+                    Rebuild DB
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Error" 
+                           Size="Size.Small"
+                           OnClick="ClearAll"
+                           Class="flex-grow-1 font-size-xs">
+                    Clear All
+                </MudButton>
+            </div>
+        </div>
+
+        <div class="mt-auto">
+            <MudNavMenu Class="sidebar-nav">
+                <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+                <MudNavLink Href="/upload" Icon="@Icons.Material.Filled.Upload">Upload</MudNavLink>
+                <MudNavLink Href="/chat" Icon="@Icons.Material.Filled.Chat">Chat</MudNavLink>
+                <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
+            </MudNavMenu>
+        </div>
+    </MudDrawer>
+
+    <MudMainContent Class="main-content-area pa-6">
+        <div class="content-container">
+            @Body
+        </div>
+    </MudMainContent>
+</MudLayout>
+
+<style>
+    .main-app-layout {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+
+    .appbar-glass {
+        background: rgba(99, 102, 241, 0.85) !important;
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .app-title {
+        font-weight: 800 !important;
+        letter-spacing: 0.5px;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar-drawer {
+        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .sidebar-header {
+        padding: 24px 16px 12px 16px;
+        text-align: center;
+    }
+
+    .text-slate-400 {
+        color: #94a3b8 !important;
+    }
+
+    .text-slate-300 {
+        color: #cbd5e1 !important;
+    }
+
+    .border-slate-700 {
+        border-color: #334155 !important;
+    }
+
+    .custom-select .mud-input {
+        color: white !important;
+    }
+
+    .custom-select .mud-input-label {
+        color: #94a3b8 !important;
+    }
+
+    .custom-select .mud-input-outlined-border {
+        border-color: #475569 !important;
+    }
+
+    .custom-select:hover .mud-input-outlined-border {
+        border-color: #6366f1 !important;
+    }
+
+    .status-alert {
+        background-color: rgba(30, 41, 59, 0.5) !important;
+        color: #e2e8f0 !important;
+        border: 1px solid #334155 !important;
+    }
+
+    .feature-bullets {
+        font-size: 0.85rem;
+        line-height: 1.8;
+    }
+
+    .font-size-xs {
+        font-size: 0.75rem !important;
+    }
+
+    .sidebar-action-btn {
+        text-transform: none !important;
+        font-weight: 600 !important;
+    }
+
+    .sidebar-nav {
+        background: rgba(15, 23, 42, 0.5);
+        border-top: 1px solid #1e293b;
+    }
+
+    .sidebar-nav .mud-nav-link {
+        color: #cbd5e1 !important;
+    }
+
+    .sidebar-nav .mud-nav-link.active {
+        background-color: rgba(99, 102, 241, 0.15) !important;
+        color: #818cf8 !important;
+        font-weight: 600;
+        border-left: 4px solid #6366f1;
+    }
+
+    .provider-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        margin-right: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .provider-openai { background: #10a37f; color: white; }
+    .provider-google { background: #4285f4; color: white; }
+    .provider-groq { background: #f55036; color: white; }
+    .provider-ollama { background: #6366f1; color: white; }
+
+    .content-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _darkMode = false;
+
+    private MudTheme _theme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#6366f1",
+            Secondary = "#8b5cf6",
+            Tertiary = "#ec4899",
+            Background = "#f8fafc",
+            AppbarBackground = "#6366f1"
+        },
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#818cf8",
+            Secondary = "#a78bfa",
+            Tertiary = "#f472b6",
+            Background = "#0f172a",
+            Surface = "#1e293b",
+            AppbarBackground = "#1e293b"
+        }
+    };
+
+    protected override void OnInitialized()
+    {
+        SessionState.OnStateChanged += StateHasChanged;
+    }
+
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void ToggleDarkMode()
+    {
+        _darkMode = !_darkMode;
+    }
+
+    private void OnProviderChanged(AIProvider provider)
+    {
+        SessionState.SelectedProvider = provider;
+        var models = GetAvailableModels(provider);
+        SessionState.SelectedModel = models.FirstOrDefault() ?? string.Empty;
+        SessionState.NotifyStateChanged();
+    }
+
+    private void OnModelChanged(string model)
+    {
+        SessionState.SelectedModel = model;
+        SessionState.NotifyStateChanged();
+    }
+
+    private void OnTemperatureChanged(double temp)
+    {
+        SessionState.Temperature = temp;
+        SessionState.NotifyStateChanged();
+    }
+
+    private List<string> GetAvailableModels(AIProvider provider)
+    {
+        return provider switch
+        {
+            AIProvider.Ollama => new() { "llama3.2", "llama3.1", "mistral", "codellama", "gemma2" },
+            AIProvider.OpenAI => new() { "gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo" },
+            AIProvider.Google => new() { "gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-1.5-flash" },
+            AIProvider.Groq => new() { "llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "mixtral-8x7b-32768", "gemma2-9b-it" },
+            _ => new()
+        };
+    }
+
+    private string GetProviderBadgeClass(AIProvider provider)
+    {
+        return provider switch
+        {
+            AIProvider.OpenAI => "provider-openai",
+            AIProvider.Google => "provider-google",
+            AIProvider.Groq => "provider-groq",
+            AIProvider.Ollama => "provider-ollama",
+            _ => "provider-ollama"
+        };
+    }
+
+    private async Task ClearAllAndStartFresh()
+    {
+        SessionState.ClearAll();
+        await VectorStore.ClearAsync();
+        SqliteEngine.Clear();
+        SessionState.NotifyStateChanged();
+        Navigation.NavigateTo("/upload");
+    }
+
+    private async Task RebuildDB()
+    {
+        await VectorStore.ClearAsync();
+        foreach (var doc in SessionState.ExtractedDocuments)
+        {
+            await VectorStore.AddDocumentAsync(doc);
+        }
+        SessionState.NotifyStateChanged();
+    }
+
+    private void ClearAll()
+    {
+        SessionState.ClearAll();
+        Navigation.NavigateTo("/");
+    }
+
+    public void Dispose()
+    {
+        SessionState.OnStateChanged -= StateHasChanged;
+    }
+}

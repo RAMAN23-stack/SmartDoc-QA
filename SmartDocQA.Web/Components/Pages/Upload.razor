@@ -1,0 +1,714 @@
+@page "/upload"
+@using SmartDocQA.Core.Interfaces
+@using SmartDocQA.Core.Models
+@using SmartDocQA.Infrastructure.AI
+@using System.Data
+@inject IDocumentProcessor DocumentProcessor
+@inject IVectorStore VectorStore
+@inject DocumentSessionState SessionState
+@inject SqliteQueryEngine SqliteEngine
+@inject ISnackbar Snackbar
+
+<PageTitle>Upload - SmartDoc QA</PageTitle>
+
+<!-- Hero -->
+<div class="upload-hero mb-6">
+    <h2>📤 Upload Your Documents</h2>
+    <p>AI-powered document analysis · Up to 10 files · 100 MB each</p>
+</div>
+
+<!-- Fresh Start Notice -->
+@if (freshStartTriggered)
+{
+    <MudAlert Severity="Severity.Success" Class="fresh-start-alert mb-4" Dense="false">
+        <div class="d-flex flex-column gap-1">
+            <strong>🆕 Fresh Start — All Old Data Cleared!</strong>
+            <div>✅ Old tabular data removed</div>
+            <div>✅ Old vector database deleted</div>
+            <div>✅ Processing @totalFilesSelected NEW file(s) only</div>
+            <div style="font-size: 0.85rem; opacity: 0.85; margin-top: 4px;">
+                Questions will be answered ONLY from these new files
+            </div>
+        </div>
+    </MudAlert>
+}
+
+<!-- File Upload Area -->
+<MudPaper Class="pa-6 mb-4 upload-card" Elevation="2">
+    <div class="drop-zone">
+        <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+        <MudText Typo="Typo.h6" Class="mb-1 font-weight-bold">Drop files here or click to browse</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+            Hold <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> to select multiple files at once
+        </MudText>
+
+        <!-- Supported formats chips -->
+        <div class="d-flex flex-wrap justify-center gap-1 mb-4">
+            @foreach (var fmt in new[] { "PDF", "DOCX", "XLSX", "XLS", "CSV", "TXT", "PNG", "JPG", "JPEG" })
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined" Class="format-chip">@fmt</MudChip>
+            }
+        </div>
+
+        <InputFile OnChange="@HandleFileUpload"
+                   multiple
+                   accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.png,.jpg,.jpeg"
+                   id="fileInput"
+                   class="hidden-input" />
+        <label for="fileInput" class="upload-label mud-button-root mud-button mud-button-filled mud-button-filled-primary mud-elevation-2 @(isProcessing ? "disabled-label" : "")">
+            <span class="mud-button-label">@(isProcessing ? "⏳ Processing..." : "📁 Choose Files (up to 10)")</span>
+        </label>
+
+        <!-- Limits info -->
+        <div class="limits-row mt-3">
+            <span class="limit-badge">📂 Max 10 files</span>
+            <span class="limit-badge">💾 Max 100 MB each</span>
+            <span class="limit-badge">🔒 Secure local processing</span>
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    @if (isProcessing)
+    {
+        <div class="mt-4 progress-section">
+            <div class="d-flex justify-space-between align-center mb-1">
+                <MudText Typo="Typo.body2" Color="Color.Primary"><strong>🔄 @currentFile</strong></MudText>
+                <MudText Typo="Typo.caption">@processedCount / @totalFilesSelected files</MudText>
+            </div>
+            <MudProgressLinear Color="Color.Primary"
+                               Value="@progressValue"
+                               Rounded="true"
+                               Size="Size.Medium"
+                               Class="mb-2" />
+            <MudText Typo="Typo.caption" Class="text-center opacity-70">@processingStatus</MudText>
+        </div>
+    }
+</MudPaper>
+
+<!-- Success & Error Lists (shown during/after upload) -->
+@if (successFiles.Any() || errorFiles.Any())
+{
+    <MudGrid Spacing="3" Class="mb-4">
+        @if (successFiles.Any())
+        {
+            <MudItem xs="12" md="@(errorFiles.Any() ? 6 : 12)">
+                <MudPaper Class="pa-4 result-card result-success" Elevation="2">
+                    <MudText Typo="Typo.subtitle1" Class="font-weight-bold mb-3">
+                        ✅ Successfully Processed (@successFiles.Count)
+                    </MudText>
+                    @foreach (var f in successFiles)
+                    {
+                        <div class="result-item success-item">
+                            <span class="result-icon">@GetFileIcon(System.IO.Path.GetExtension(f.Name).TrimStart('.'))</span>
+                            <div class="result-info">
+                                <span class="result-name">@f.Name</span>
+                                <span class="result-size">@FormatFileSize(f.Size)</span>
+                            </div>
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                        </div>
+                    }
+                </MudPaper>
+            </MudItem>
+        }
+
+        @if (errorFiles.Any())
+        {
+            <MudItem xs="12" md="@(successFiles.Any() ? 6 : 12)">
+                <MudPaper Class="pa-4 result-card result-error" Elevation="2">
+                    <MudText Typo="Typo.subtitle1" Class="font-weight-bold mb-3">
+                        ❌ Failed Files (@errorFiles.Count)
+                    </MudText>
+                    @foreach (var f in errorFiles)
+                    {
+                        <div class="result-item error-item">
+                            <span class="result-icon">⚠️</span>
+                            <div class="result-info">
+                                <span class="result-name">@f.Name</span>
+                                <span class="result-error-msg">@f.Error</span>
+                            </div>
+                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+                        </div>
+                    }
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+<!-- Processed Documents -->
+@if (SessionState.ExtractedDocuments.Any() || SessionState.TabularData != null)
+{
+    <!-- Stats Row -->
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="4">
+            <div class="stat-card">
+                <div class="stat-value">@(SessionState.ExtractedDocuments.Count + (SessionState.TabularData != null ? 1 : 0))</div>
+                <div class="stat-label">Documents Loaded</div>
+            </div>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <div class="stat-card">
+                <div class="stat-value">@GetTotalChars()</div>
+                <div class="stat-label">Characters Indexed</div>
+            </div>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <div class="stat-card @(vectorDbBuilt ? "stat-card-success" : "")">
+                <div class="stat-value">@(vectorDbBuilt ? "✅" : "⏳")</div>
+                <div class="stat-label">@(vectorDbBuilt ? "Vector DB Ready" : "Building...")</div>
+            </div>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Document Cards -->
+    <MudText Typo="Typo.h6" Class="mb-3 font-weight-bold">📁 Processed Documents</MudText>
+    <MudGrid Spacing="3">
+        @if (SessionState.TabularData != null)
+        {
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Class="doc-card doc-card-tabular">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">
+                                @(SessionState.TabularFileType == "Excel" ? "📊" : "📋")
+                                @SessionState.TabularDocument?.FileName
+                            </MudText>
+                            <MudText Typo="Typo.caption">@SessionState.TabularFileType Data</MudText>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Success">LOADED</MudChip>
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudText Typo="Typo.body2"><strong>Rows:</strong> @SessionState.TabularData.Rows.Count</MudText>
+                        <MudText Typo="Typo.body2"><strong>Columns:</strong> @SessionState.TabularData.Columns.Count</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        }
+
+        @foreach (var doc in SessionState.ExtractedDocuments)
+        {
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Class="doc-card">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">@GetFileIcon(doc.FileType) @doc.FileName</MudText>
+                            <MudText Typo="Typo.caption">@doc.FileType.ToUpper()</MudText>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Primary">INDEXED</MudChip>
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        @if (doc.PageCount > 0)
+                        {
+                            <MudText Typo="Typo.body2"><strong>@GetCountLabel(doc.FileType):</strong> @doc.PageCount.ToString("N0")</MudText>
+                        }
+                        <MudText Typo="Typo.body2"><strong>Characters:</strong> @doc.Content.Length.ToString("N0")</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+
+    <!-- Tabular Data Preview -->
+    @if (SessionState.TabularData != null)
+    {
+        <MudText Typo="Typo.h6" Class="mt-6 mb-3 font-weight-bold">
+            📊 Data Preview (First 5 Rows)
+        </MudText>
+        <MudPaper Elevation="2" Class="overflow-x-auto">
+            <MudTable Items="@GetPreviewRows()" Dense="true" Striped="true" Bordered="true" Elevation="0">
+                <HeaderContent>
+                    @foreach (DataColumn col in SessionState.TabularData.Columns)
+                    {
+                        <MudTh>@col.ColumnName</MudTh>
+                    }
+                </HeaderContent>
+                <RowTemplate>
+                    @foreach (var val in context)
+                    {
+                        <MudTd>@val</MudTd>
+                    }
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+
+        <!-- Column Reference -->
+        <div class="columns-info mt-4 pa-4">
+            <MudText Typo="Typo.subtitle2" Class="font-weight-bold mb-2">
+                📋 Available Columns (exact names):
+            </MudText>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (DataColumn col in SessionState.TabularData.Columns)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">@col.ColumnName</MudChip>
+                }
+            </div>
+            <MudText Typo="Typo.caption" Class="mt-2 opacity-70">
+                💡 Tip: Use exact column names or Excel cell references like <strong>E46</strong>, <strong>A10</strong> in the Chat
+            </MudText>
+        </div>
+    }
+
+    <!-- Go To Chat -->
+    <div class="text-center mt-6">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Href="/chat"
+                   Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.Chat"
+                   Class="go-chat-btn">
+            💬 Go to Chat → Ask Questions
+        </MudButton>
+    </div>
+}
+
+<style>
+    .upload-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2.5rem 2rem;
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    }
+    .upload-hero h2 { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; }
+    .upload-hero p  { font-size: 1rem; opacity: 0.9; }
+
+    .fresh-start-alert {
+        background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%) !important;
+        color: white !important;
+        border: 2px solid gold !important;
+    }
+
+    .upload-card {
+        border: 2px dashed #c7d2fe;
+        border-radius: 16px !important;
+        background: linear-gradient(135deg, #f5f7ff 0%, #faf5ff 100%) !important;
+        transition: border-color 0.3s ease;
+    }
+    .upload-card:hover { border-color: #6366f1; }
+
+    .drop-zone {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 2rem 1rem;
+    }
+
+    .hidden-input { display: none; }
+
+    .upload-label {
+        cursor: pointer;
+        border-radius: 10px !important;
+        padding: 0.75rem 2rem !important;
+        text-transform: none !important;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.2s ease !important;
+    }
+    .upload-label:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(99,102,241,0.4) !important; }
+    .disabled-label { opacity: 0.65; pointer-events: none; }
+
+    .format-chip { font-size: 0.7rem !important; }
+
+    .limits-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    .limit-badge {
+        background: rgba(99,102,241,0.08);
+        border: 1px solid rgba(99,102,241,0.2);
+        border-radius: 20px;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.78rem;
+        color: #6366f1;
+        font-weight: 500;
+    }
+
+    .progress-section {
+        background: rgba(99,102,241,0.05);
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        border: 1px solid rgba(99,102,241,0.15);
+    }
+
+    /* Result cards */
+    .result-card { border-radius: 12px !important; }
+    .result-success { border-left: 4px solid #10b981 !important; background: linear-gradient(135deg, #f0fdf4, #ecfdf5) !important; }
+    .result-error   { border-left: 4px solid #ef4444 !important; background: linear-gradient(135deg, #fff5f5, #fef2f2) !important; }
+
+    .result-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.6rem 0.75rem;
+        margin-bottom: 0.5rem;
+        border-radius: 8px;
+        background: white;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .result-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .result-info { flex: 1; min-width: 0; }
+    .result-name {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #1e293b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .result-size {
+        display: block;
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+    .result-error-msg {
+        display: block;
+        font-size: 0.75rem;
+        color: #ef4444;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        border-top: 4px solid #6366f1;
+    }
+    .stat-card-success { border-top-color: #10b981 !important; }
+    .stat-value { font-size: 2rem; font-weight: 800; color: #6366f1; margin-bottom: 0.25rem; }
+    .stat-label { font-size: 0.85rem; color: #64748b; font-weight: 500; }
+
+    .doc-card {
+        height: 100%;
+        border-top: 4px solid #6366f1;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .doc-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+    .doc-card-tabular { border-top-color: #10b981; }
+
+    .columns-info {
+        background: linear-gradient(135deg, #f5f7ff 0%, #faf5ff 100%);
+        border-radius: 12px;
+        border-left: 4px solid #6366f1;
+    }
+
+    .go-chat-btn {
+        padding: 1rem 3rem !important;
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        border-radius: 12px !important;
+        text-transform: none !important;
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35) !important;
+        transition: all 0.3s ease !important;
+    }
+    .go-chat-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(99, 102, 241, 0.45) !important; }
+
+    kbd {
+        background: #e2e8f0;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 0.78rem;
+        font-family: monospace;
+        color: #475569;
+    }
+</style>
+
+@code {
+    // ── State ─────────────────────────────────────────────────────────
+    private bool isProcessing = false;
+    private bool freshStartTriggered = false;
+    private bool vectorDbBuilt = false;
+    private string currentFile = "";
+    private string processingStatus = "";
+    private int processedCount = 0;
+    private int totalFilesSelected = 0;
+    private double progressValue = 0;
+
+    // Result tracking
+    private record SuccessFile(string Name, long Size);
+    private record ErrorFile(string Name, string Error);
+    private List<SuccessFile> successFiles = new();
+    private List<ErrorFile> errorFiles = new();
+
+    // Allowed extensions
+    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "pdf", "docx", "xlsx", "xls", "csv", "txt", "png", "jpg", "jpeg"
+    };
+
+    private const long MaxFileSizeBytes = 100L * 1024 * 1024; // 100 MB
+    private const int MaxFiles = 10;
+
+    // ── Upload Handler ────────────────────────────────────────────────
+    private async Task HandleFileUpload(InputFileChangeEventArgs e)
+    {
+        var allFiles = e.GetMultipleFiles(MaxFiles).ToList();
+        if (!allFiles.Any()) return;
+
+        // Reset state
+        isProcessing = true;
+        freshStartTriggered = true;
+        vectorDbBuilt = false;
+        processedCount = 0;
+        progressValue = 0;
+        successFiles.Clear();
+        errorFiles.Clear();
+
+        // Validate selection count
+        if (e.FileCount > MaxFiles)
+        {
+            Snackbar.Add($"⚠️ Only the first {MaxFiles} files will be processed (you selected {e.FileCount}).", Severity.Warning);
+        }
+
+        totalFilesSelected = allFiles.Count;
+
+        // FRESH START — clear all previous data
+        SessionState.ClearAll();
+        await VectorStore.ClearAsync();
+        SqliteEngine.Clear();
+
+        var newDocs = new List<Document>();
+
+        foreach (var file in allFiles)
+        {
+            currentFile = file.Name;
+            var extension = System.IO.Path.GetExtension(file.Name).TrimStart('.').ToLower();
+
+            processingStatus = $"Validating {file.Name}...";
+            StateHasChanged();
+
+            // ── Validation ──────────────────────────────────────────
+            // 1. File type check
+            if (!AllowedExtensions.Contains(extension))
+            {
+                errorFiles.Add(new ErrorFile(file.Name, $"Unsupported format: .{extension}"));
+                processedCount++;
+                UpdateProgress();
+                StateHasChanged();
+                continue;
+            }
+
+            // 2. File size check
+            if (file.Size > MaxFileSizeBytes)
+            {
+                errorFiles.Add(new ErrorFile(file.Name, $"File too large: {FormatFileSize(file.Size)} (max 100 MB)"));
+                processedCount++;
+                UpdateProgress();
+                StateHasChanged();
+                continue;
+            }
+
+            // ── Processing ──────────────────────────────────────────
+            processingStatus = $"Reading {file.Name} ({FormatFileSize(file.Size)})...";
+            StateHasChanged();
+
+            try
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: MaxFileSizeBytes);
+                using var ms = new System.IO.MemoryStream();
+                await stream.CopyToAsync(ms);
+                ms.Position = 0;
+
+                processingStatus = $"Extracting content from {file.Name}...";
+                StateHasChanged();
+
+                var doc = await DocumentProcessor.ProcessAsync(ms, file.Name, extension);
+
+                // Handle tabular (Excel/CSV)
+                if (extension is "xlsx" or "xls" or "csv")
+                {
+                    var dt = ConvertToDataTable(doc);
+                    SqliteEngine.LoadDataTable(dt);
+                    SessionState.SetTabularData(doc, dt, extension is "xlsx" or "xls" ? "Excel" : "CSV");
+                    
+                    if (!string.IsNullOrWhiteSpace(doc.Content))
+                    {
+                        newDocs.Add(doc);
+                        SessionState.AddExtractedDocument(doc);
+                    }
+                }
+                // Handle images — store raw bytes as base64 for the OCR intelligence route
+                else if (extension is "png" or "jpg" or "jpeg" or "bmp" or "tiff" or "webp")
+                {
+                    ms.Position = 0;
+                    var imageBytes = ms.ToArray();
+                    var base64 = Convert.ToBase64String(imageBytes);
+                    var mime = extension switch
+                    {
+                        "jpg" or "jpeg" => "image/jpeg",
+                        "png"           => "image/png",
+                        "bmp"           => "image/bmp",
+                        "tiff"          => "image/tiff",
+                        "webp"          => "image/webp",
+                        _               => "image/png"
+                    };
+                    SessionState.SetImageDocument(doc, base64, mime);
+                    if (!string.IsNullOrWhiteSpace(doc.Content))
+                    {
+                        newDocs.Add(doc);
+                        SessionState.AddExtractedDocument(doc);
+                    }
+                }
+                else
+                {
+                    if (!string.IsNullOrWhiteSpace(doc.Content))
+                    {
+                        newDocs.Add(doc);
+                        SessionState.AddExtractedDocument(doc);
+                    }
+                }
+
+                successFiles.Add(new SuccessFile(file.Name, file.Size));
+            }
+            catch (Exception ex)
+            {
+                errorFiles.Add(new ErrorFile(file.Name, ex.Message));
+            }
+
+            processedCount++;
+            UpdateProgress();
+            StateHasChanged();
+        }
+
+        // ── Build Vector Store ────────────────────────────────────────
+        if (newDocs.Any())
+        {
+            processingStatus = "Building AI knowledge base...";
+            StateHasChanged();
+
+            foreach (var doc in newDocs)
+            {
+                try
+                {
+                    await VectorStore.AddDocumentAsync(doc);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Embedding warning for {doc.FileName}: {ex.Message}");
+                }
+            }
+        }
+
+        vectorDbBuilt = true;
+        isProcessing = false;
+        currentFile = "";
+        processingStatus = "";
+        progressValue = 100;
+        SessionState.NotifyStateChanged();
+        StateHasChanged();
+
+        // Final snackbar summary
+        if (successFiles.Any())
+            Snackbar.Add($"✅ {successFiles.Count} file(s) processed successfully!", Severity.Success);
+        if (errorFiles.Any())
+            Snackbar.Add($"⚠️ {errorFiles.Count} file(s) failed — see error list above.", Severity.Warning);
+    }
+
+    private void UpdateProgress()
+    {
+        progressValue = totalFilesSelected > 0
+            ? Math.Round((double)processedCount / totalFilesSelected * 100, 1)
+            : 0;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────
+
+    private static string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        if (bytes < 1024L * 1024 * 1024) return $"{bytes / (1024.0 * 1024):F1} MB";
+        return $"{bytes / (1024.0 * 1024 * 1024):F2} GB";
+    }
+
+    private DataTable ConvertToDataTable(Document doc)
+    {
+        var dt = new DataTable();
+        if (!doc.TabularData.Any()) return dt;
+
+        var firstRow = doc.TabularData.First();
+        var colKeyMap = new Dictionary<string, string>();
+        int fallbackIdx = 0;
+        foreach (var key in firstRow.Columns.Keys)
+        {
+            var trimmed = key.Trim();
+            if (string.IsNullOrEmpty(trimmed)) trimmed = $"col_{fallbackIdx}";
+            fallbackIdx++;
+            var safeName = trimmed;
+            int dup = 1;
+            while (colKeyMap.ContainsKey(safeName))
+                safeName = $"{trimmed}_{dup++}";
+            colKeyMap[safeName] = key;
+            dt.Columns.Add(safeName, typeof(string));
+        }
+
+        foreach (var row in doc.TabularData)
+        {
+            var dr = dt.NewRow();
+            foreach (var col in dt.Columns.Cast<DataColumn>())
+            {
+                var originalKey = colKeyMap.TryGetValue(col.ColumnName, out var ok) ? ok : col.ColumnName;
+                dr[col.ColumnName] = row.Columns.TryGetValue(originalKey, out var val) ? val?.ToString() ?? "" : "";
+            }
+            dt.Rows.Add(dr);
+        }
+        return dt;
+    }
+
+    private List<object[]> GetPreviewRows()
+    {
+        if (SessionState.TabularData == null) return new();
+        var result = new List<object[]>();
+        int maxRows = Math.Min(5, SessionState.TabularData.Rows.Count);
+        for (int i = 0; i < maxRows; i++)
+        {
+            var rowItems = new object[SessionState.TabularData.Columns.Count];
+            for (int j = 0; j < SessionState.TabularData.Columns.Count; j++)
+                rowItems[j] = SessionState.TabularData.Rows[i][j] ?? "";
+            result.Add(rowItems);
+        }
+        return result;
+    }
+
+    private string GetTotalChars()
+    {
+        var total = SessionState.ExtractedDocuments.Sum(d => d.Content.Length);
+        if (SessionState.TabularDocument != null)
+            total += SessionState.TabularDocument.Content.Length;
+        return total.ToString("N0");
+    }
+
+    private string GetFileIcon(string fileType) => fileType.ToLower() switch
+    {
+        "pdf"                  => "📄",
+        "docx"                 => "📝",
+        "txt"                  => "📃",
+        "png" or "jpg"
+            or "jpeg"          => "🖼️",
+        "xlsx" or "xls"        => "📊",
+        "csv"                  => "📋",
+        _                      => "📁"
+    };
+
+    private string GetCountLabel(string fileType) => fileType.ToLower() switch
+    {
+        "pdf" => "Pages",
+        "docx" => "Paragraphs",
+        "xlsx" or "xls" or "csv" => "Rows",
+        "txt" => "Characters",
+        "png" or "jpg" or "jpeg" => "Extracted Chars",
+        _ => "Count"
+    };
+}

@@ -1,0 +1,345 @@
+@page "/"
+@using SmartDocQA.Core.Models
+@inject DocumentSessionState SessionState
+
+<PageTitle>SmartDoc QA - AI Document Intelligence</PageTitle>
+
+<div class="hero-section">
+    <h1>📄 SmartDoc QA</h1>
+    <p>Upload documents & images, process them with AI, and ask intelligent questions!</p>
+    <p style="font-size: 1rem; margin-top: 1rem; opacity: 0.9;">
+        🔒 Multi-Provider AI • Fresh Documents Mode • Secure .env Keys
+    </p>
+</div>
+
+<!-- API Keys Status Box -->
+<div class="pa-4 mb-4 rounded-lg env-box @(AreAnyKeysLoaded() ? "env-loaded" : "env-missing")">
+    <h3 style="margin: 0 0 8px 0; font-weight: 700;">🔐 API Keys Loaded from .env</h3>
+    <div class="d-flex flex-wrap gap-2">
+        <span class="status-badge @(IsKeyLoaded("GROQ_API_KEY") ? "loaded" : "missing")">
+            @(IsKeyLoaded("GROQ_API_KEY") ? "✅ 🔴 Groq" : "❌ 🔴 Groq")
+        </span>
+        <span class="status-badge @(IsKeyLoaded("OPENAI_API_KEY") ? "loaded" : "missing")">
+            @(IsKeyLoaded("OPENAI_API_KEY") ? "✅ 🟢 OpenAI" : "❌ 🟢 OpenAI")
+        </span>
+        <span class="status-badge @(IsKeyLoaded("GOOGLE_API_KEY") ? "loaded" : "missing")">
+            @(IsKeyLoaded("GOOGLE_API_KEY") ? "✅ 🔵 Google" : "❌ 🔵 Google")
+        </span>
+    </div>
+    @if (!AreAnyKeysLoaded())
+    {
+        <p class="mt-2 text-sm opacity-80" style="font-size: 0.85rem;">Create a <code>.env</code> file in the root workspace directory with your API keys to get started.</p>
+    }
+</div>
+
+<!-- Current Provider Box -->
+<div class="premium-box mb-6">
+    <h3 style="margin: 0 0 8px 0; font-weight: 700;">🤖 Current AI Provider</h3>
+    <p style="font-size: 1.2rem; margin: 8px 0;">
+        <span class="provider-badge @GetProviderBadgeClass(SessionState.SelectedProvider)">
+            @SessionState.SelectedProvider.ToString()
+        </span>
+        <strong>Model:</strong> @SessionState.SelectedModel
+    </p>
+    <p style="font-size: 0.9rem; opacity: 0.9; margin: 0;">
+        💡 Change provider, model, and temperature anytime in the sidebar
+    </p>
+</div>
+
+<!-- Step Progress Indicator -->
+<div class="d-flex flex-wrap justify-space-between align-center mb-6 py-4 px-2 rounded-lg bg-white box-shadow-sm gap-4">
+    <div class="step-indicator @GetStepClass(1)">
+        <div class="step-num">1</div>
+        <div class="step-label">
+            <h4>Upload Files</h4>
+            <p>Add your documents</p>
+        </div>
+    </div>
+    <div class="step-arrow">➔</div>
+    <div class="step-indicator @GetStepClass(2)">
+        <div class="step-num">2</div>
+        <div class="step-label">
+            <h4>Process</h4>
+            <p>Create knowledge base</p>
+        </div>
+    </div>
+    <div class="step-arrow">➔</div>
+    <div class="step-indicator @GetStepClass(3)">
+        <div class="step-num">3</div>
+        <div class="step-label">
+            <h4>Ask Questions</h4>
+            <p>Get AI answers</p>
+        </div>
+    </div>
+</div>
+
+<MudGrid>
+    <MudItem xs="12" sm="4">
+        <MudCard Class="feature-card">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6" Class="font-weight-bold">📤 Upload Documents</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Upload PDF, DOCX, TXT, Excel (XLSX/XLS), CSV, and Images (PNG/JPG/JPEG).</MudText>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/upload" Class="w-full">
+                    Upload Now
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="4">
+        <MudCard Class="feature-card">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6" Class="font-weight-bold">💬 Ask Questions</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Semantic RAG search over documents and automated SQLite querying over tabular data.</MudText>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" Href="/chat" Class="w-full" Disabled="@(!IsDataLoaded())">
+                    Start Chat
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="4">
+        <MudCard Class="feature-card">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6" Class="font-weight-bold">⚙️ Configuration</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudText Typo="Typo.body2">Review active configurations and detailed capabilities of each AI model.</MudText>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Tertiary" Href="/settings" Class="w-full">
+                    Configure Settings
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 3.5rem 2rem;
+        border-radius: 20px;
+        color: white;
+        text-align: center;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+    }
+    
+    .hero-section h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .hero-section p {
+        font-size: 1.25rem;
+        opacity: 0.95;
+    }
+
+    .env-box {
+        border-left: 5px solid;
+    }
+
+    .env-loaded {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+        border-color: #10b981;
+        color: #064e3b;
+    }
+    
+    .env-missing {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%);
+        border-color: #f59e0b;
+        color: #78350f;
+    }
+
+    /* Dark mode adjustments for alerts */
+    .mud-theme-dark .env-loaded {
+        color: #a7f3d0;
+        background: rgba(16, 185, 129, 0.15);
+    }
+
+    .mud-theme-dark .env-missing {
+        color: #fde68a;
+        background: rgba(245, 158, 11, 0.15);
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .status-badge.loaded {
+        background-color: rgba(16, 185, 129, 0.2);
+        color: #047857;
+    }
+
+    .mud-theme-dark .status-badge.loaded {
+        color: #34d399;
+    }
+
+    .status-badge.missing {
+        background-color: rgba(245, 158, 11, 0.2);
+        color: #b45309;
+    }
+
+    .mud-theme-dark .status-badge.missing {
+        color: #fbbf24;
+    }
+
+    .premium-box {
+        background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);
+        border: 2px solid gold;
+    }
+
+    .box-shadow-sm {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .mud-theme-dark .bg-white {
+        background-color: #1e293b !important;
+        color: #cbd5e1;
+    }
+
+    .step-indicator {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        min-width: 200px;
+        opacity: 0.5;
+        transition: opacity 0.3s ease;
+    }
+
+    .step-indicator.active {
+        opacity: 1;
+    }
+
+    .step-num {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #64748b;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
+    .step-indicator.active .step-num {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        animation: pulse 2s infinite;
+    }
+
+    .step-indicator.completed .step-num {
+        background: #10b981;
+    }
+
+    .step-label h4 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+
+    .step-label p {
+        margin: 0;
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+
+    .step-arrow {
+        color: #94a3b8;
+        font-size: 1.25rem;
+    }
+
+    .feature-card {
+        height: 100%;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-top: 4px solid #6366f1;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+    }
+
+    .w-full {
+        width: 100%;
+    }
+
+    @@keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+</style>
+
+@code {
+    private bool IsKeyLoaded(string keyName)
+    {
+        return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(keyName));
+    }
+
+    private bool AreAnyKeysLoaded()
+    {
+        return IsKeyLoaded("GROQ_API_KEY") || IsKeyLoaded("OPENAI_API_KEY") || IsKeyLoaded("GOOGLE_API_KEY");
+    }
+
+    private string GetProviderBadgeClass(AIProvider provider)
+    {
+        return provider switch
+        {
+            AIProvider.OpenAI => "provider-openai",
+            AIProvider.Google => "provider-google",
+            AIProvider.Groq => "provider-groq",
+            AIProvider.Ollama => "provider-ollama",
+            _ => "provider-ollama"
+        };
+    }
+
+    private bool IsDataLoaded()
+    {
+        return SessionState.TabularData != null || SessionState.ExtractedDocuments.Any();
+    }
+
+    private string GetStepClass(int step)
+    {
+        bool hasDocs = SessionState.ExtractedDocuments.Any() || SessionState.TabularData != null;
+        
+        if (step == 1)
+        {
+            return !hasDocs ? "active" : "completed";
+        }
+        if (step == 2)
+        {
+            return hasDocs ? "completed" : "";
+        }
+        if (step == 3)
+        {
+            return hasDocs ? "active" : "";
+        }
+        return "";
+    }
+}
