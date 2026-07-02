@@ -12,299 +12,568 @@
 <MudSnackbarProvider />
 
 <MudLayout Class="main-app-layout">
-    <MudAppBar Elevation="2" Color="Color.Primary" Class="appbar-glass">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-        <MudText Typo="Typo.h5" Class="app-title">📄 SmartDoc QA</MudText>
-        <MudSpacer />
-        <div class="appbar-status">
-            <span class="provider-badge @GetProviderBadgeClass(SessionState.SelectedProvider)">
-                @SessionState.SelectedProvider.ToString()
-            </span>
-            <MudText Typo="Typo.caption" Class="text-white opacity-70">@SessionState.SelectedModel</MudText>
+    <MudAppBar Elevation="0" Color="Color.Transparent" Class="pro-appbar">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                       OnClick="@((e) => DrawerToggle())" Class="menu-btn" />
+        <div class="brand-area">
+            <div class="brand-icon-wrap">
+                <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Class="brand-icon-svg" />
+            </div>
+            <div>
+                <MudText Typo="Typo.h6" Class="brand-name">SmartDoc QA</MudText>
+                <MudText Typo="Typo.caption" Class="brand-tagline">AI Document Intelligence</MudText>
+            </div>
         </div>
-        <MudIconButton Icon="@(_darkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" 
-                       Color="Color.Inherit" 
-                       OnClick="@ToggleDarkMode" 
-                       Class="ml-3" />
+        <MudSpacer />
+        <div class="appbar-right">
+            <div class="provider-chip @GetProviderBadgeClass(SessionState.SelectedProvider)">
+                <span class="provider-dot"></span>
+                <span class="provider-name">@SessionState.SelectedProvider.ToString()</span>
+            </div>
+            <div class="model-label">@SessionState.SelectedModel</div>
+            <div class="divider-v"></div>
+            <MudIconButton Icon="@(_darkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                           Color="Color.Inherit"
+                           OnClick="@ToggleDarkMode"
+                           Class="theme-btn" />
+        </div>
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="3" Width="320px" Class="sidebar-drawer">
-        <div class="sidebar-header">
-            <MudText Typo="Typo.h5" Class="text-white font-weight-bold">📄 SmartDoc QA</MudText>
-            <MudText Typo="Typo.caption" Class="text-slate-400">AI-Powered Document Intelligence</MudText>
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="0" Width="280px" Class="pro-sidebar">
+        <!-- Sidebar Header -->
+        <div class="sidebar-logo-area">
+            <div class="sidebar-logo-icon">
+                <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Style="font-size:1.4rem;color:#818cf8;" />
+            </div>
+            <div>
+                <div class="sidebar-logo-title">SmartDoc QA</div>
+                <div class="sidebar-logo-sub">AI-Powered Intelligence</div>
+            </div>
         </div>
 
-        <MudDivider DividerType="DividerType.Middle" Class="my-2 border-slate-700" />
+        <!-- Navigation -->
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">NAVIGATION</div>
+            <MudNavMenu Class="pro-nav">
+                <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.GridView">Dashboard</MudNavLink>
+                <MudNavLink Href="/upload" Icon="@Icons.Material.Filled.CloudUpload">Upload</MudNavLink>
+                <MudNavLink Href="/chat" Icon="@Icons.Material.Filled.SmartToy">Chat</MudNavLink>
+                <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Tune">Settings</MudNavLink>
+            </MudNavMenu>
+        </div>
 
-        <div class="px-4 py-2">
-            <MudText Typo="Typo.subtitle2" Class="text-white font-weight-bold mb-2">🤖 AI Provider</MudText>
-            
-            <MudSelect T="AIProvider" 
-                       Label="Choose AI Provider" 
-                       Value="SessionState.SelectedProvider" 
-                       ValueChanged="OnProviderChanged"
-                       Variant="Variant.Outlined" 
-                       Dense="true" 
-                       Margin="Margin.Dense"
-                       Class="custom-select mb-3">
-                <MudSelectItem Value="AIProvider.Ollama">🏠 Local (Ollama - Free)</MudSelectItem>
-                <MudSelectItem Value="AIProvider.OpenAI">🟢 OpenAI (GPT-4o/mini)</MudSelectItem>
-                <MudSelectItem Value="AIProvider.Google">🔵 Google Gemini (2.0 Flash)</MudSelectItem>
-                <MudSelectItem Value="AIProvider.Groq">🔴 Groq (Llama 3.3 - Free/Fast)</MudSelectItem>
-            </MudSelect>
+        <div class="sidebar-divider"></div>
 
-            <MudSelect T="string" 
-                       Label="Model Selection" 
-                       Value="SessionState.SelectedModel" 
-                       ValueChanged="OnModelChanged"
-                       Variant="Variant.Outlined" 
-                       Dense="true" 
-                       Margin="Margin.Dense"
-                       Class="custom-select mb-3">
-                @foreach (var model in GetAvailableModels(SessionState.SelectedProvider))
+        <!-- AI Provider -->
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">AI PROVIDER</div>
+            <div class="sidebar-field">
+                <MudSelect T="AIProvider"
+                           Label="Provider"
+                           Value="SessionState.SelectedProvider"
+                           ValueChanged="OnProviderChanged"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           Margin="Margin.Dense"
+                           Class="pro-select">
+                    <MudSelectItem Value="AIProvider.Ollama">Local (Ollama)</MudSelectItem>
+                    <MudSelectItem Value="AIProvider.OpenAI">OpenAI (GPT-4)</MudSelectItem>
+                    <MudSelectItem Value="AIProvider.Google">Google Gemini</MudSelectItem>
+                    <MudSelectItem Value="AIProvider.Groq">Groq (Llama 3.3)</MudSelectItem>
+                </MudSelect>
+            </div>
+            <div class="sidebar-field">
+                <MudSelect T="string"
+                           Label="Model"
+                           Value="SessionState.SelectedModel"
+                           ValueChanged="OnModelChanged"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           Margin="Margin.Dense"
+                           Class="pro-select">
+                    @foreach (var model in GetAvailableModels(SessionState.SelectedProvider))
+                    {
+                        <MudSelectItem Value="model">@model</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+            <div class="temp-control">
+                <div class="temp-label-row">
+                    <span class="temp-label">Temperature</span>
+                    <span class="temp-value">@SessionState.Temperature.ToString("F1")</span>
+                </div>
+                <MudSlider T="double"
+                           Value="SessionState.Temperature"
+                           ValueChanged="OnTemperatureChanged"
+                           Min="0.0" Max="1.0" Step="0.1"
+                           Color="Color.Primary"
+                           Class="pro-slider" />
+            </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- Status -->
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">STATUS</div>
+            <div class="status-list">
+                <div class="status-item @(SessionState.TabularData != null ? "status-ok" : "status-idle")">
+                    <MudIcon Icon="@(SessionState.TabularData != null ? Icons.Material.Filled.TableChart : Icons.Material.Filled.TableChart)" Class="status-icon" />
+                    <span>@(SessionState.TabularData != null ? (SessionState.TabularFileType ?? "Data") + " Loaded" : "No Data File")</span>
+                </div>
+                <div class="status-item @(SessionState.ExtractedDocuments.Any() ? "status-ok" : "status-idle")">
+                    <MudIcon Icon="@Icons.Material.Filled.Storage" Class="status-icon" />
+                    <span>@(SessionState.ExtractedDocuments.Any() ? "Vector DB Ready" : "No Vector DB")</span>
+                </div>
+                <div class="status-item @(SessionState.ExtractedDocuments.Any() ? "status-ok" : "status-idle")">
+                    <MudIcon Icon="@Icons.Material.Filled.Description" Class="status-icon" />
+                    <span>@(SessionState.ExtractedDocuments.Any() ? $"{SessionState.ExtractedDocuments.Count} Document(s)" : "No Documents")</span>
+                </div>
+                @if (SessionState.LastUploadTime.HasValue)
                 {
-                    <MudSelectItem Value="model">@model</MudSelectItem>
+                    <div class="last-upload-text">Last upload: @SessionState.LastUploadTime.Value.ToString("HH:mm:ss")</div>
                 }
-            </MudSelect>
-
-            <div class="d-flex justify-space-between align-center mb-1 text-slate-300">
-                <MudText Typo="Typo.caption">Creativity Level (Temp)</MudText>
-                <MudText Typo="Typo.caption" Class="font-weight-bold">@SessionState.Temperature.ToString("F1")</MudText>
-            </div>
-            <MudSlider T="double" 
-                       Value="SessionState.Temperature" 
-                       ValueChanged="OnTemperatureChanged"
-                       Min="0.0" 
-                       Max="1.0" 
-                       Step="0.1" 
-                       Color="Color.Secondary" 
-                       Class="mb-4" />
-        </div>
-
-        <MudDivider DividerType="DividerType.Middle" Class="my-2 border-slate-700" />
-
-        <div class="px-4 py-2">
-            <MudText Typo="Typo.subtitle2" Class="text-white font-weight-bold mb-2">📊 Status</MudText>
-            
-            @if (SessionState.TabularData != null)
-            {
-                <MudAlert Severity="Severity.Success" Dense="true" Class="status-alert mb-2">
-                    ✅ @(SessionState.TabularFileType ?? "Data") Loaded
-                </MudAlert>
-            }
-            else
-            {
-                <MudAlert Severity="Severity.Normal" Dense="true" Class="status-alert mb-2">
-                    ⚪ No Data File
-                </MudAlert>
-            }
-
-            @if (SessionState.ExtractedDocuments.Any())
-            {
-                <MudAlert Severity="Severity.Success" Dense="true" Class="status-alert mb-2">
-                    ✅ Vector DB Ready
-                </MudAlert>
-                <MudAlert Severity="Severity.Success" Dense="true" Class="status-alert mb-2">
-                    ✅ @SessionState.ExtractedDocuments.Count Document(s)
-                </MudAlert>
-            }
-            else
-            {
-                <MudAlert Severity="Severity.Normal" Dense="true" Class="status-alert mb-2">
-                    ⚪ No Vector DB
-                </MudAlert>
-                <MudAlert Severity="Severity.Normal" Dense="true" Class="status-alert mb-2">
-                    ⚪ No Documents
-                </MudAlert>
-            }
-
-            @if (SessionState.LastUploadTime.HasValue)
-            {
-                <MudText Typo="Typo.caption" Class="text-slate-400 mt-1 d-block">
-                    Last upload: @SessionState.LastUploadTime.Value.ToString("HH:mm:ss")
-                </MudText>
-            }
-        </div>
-
-        <MudDivider DividerType="DividerType.Middle" Class="my-2 border-slate-700" />
-
-        <div class="px-4 py-2">
-            <MudText Typo="Typo.subtitle2" Class="text-white font-weight-bold mb-2">🎯 Features</MudText>
-            <div class="feature-bullets text-slate-300">
-                <div>• PDF & DOCX Processing</div>
-                <div>• Excel & CSV Data Analysis</div>
-                <div>• Image OCR (Text Extraction)</div>
-                <div>• SQLite Tabular Queries</div>
-                <div>• Cell Reference (E46, A10)</div>
-                <div>• Multi-Provider AI Support</div>
-                <div>• Fresh Documents Mode</div>
             </div>
         </div>
 
-        <MudDivider DividerType="DividerType.Middle" Class="my-2 border-slate-700" />
+        <div class="sidebar-divider"></div>
 
-        <div class="px-4 py-2 d-flex flex-column gap-2 mb-6">
-            <MudButton Variant="Variant.Filled" 
-                       Color="Color.Error" 
+        <!-- Features -->
+        <div class="sidebar-section">
+            <div class="sidebar-section-label">CAPABILITIES</div>
+            <div class="feature-pill-list">
+                <div class="feature-pill">PDF &amp; DOCX</div>
+                <div class="feature-pill">Excel &amp; CSV</div>
+                <div class="feature-pill">Image OCR</div>
+                <div class="feature-pill">SQLite Query</div>
+                <div class="feature-pill">Multi-AI</div>
+                <div class="feature-pill">RAG Search</div>
+            </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- Actions -->
+        <div class="sidebar-section sidebar-actions">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Error"
                        Size="Size.Small"
                        OnClick="ClearAllAndStartFresh"
-                       StartIcon="@Icons.Material.Filled.DeleteForever"
-                       Class="sidebar-action-btn">
-                Clear & Start Fresh
+                       StartIcon="@Icons.Material.Filled.RestartAlt"
+                       Class="action-btn-primary" FullWidth="true">
+                Clear &amp; Start Fresh
             </MudButton>
-
-            <div class="d-flex gap-2">
-                <MudButton Variant="Variant.Outlined" 
-                           Color="Color.Warning" 
+            <div class="action-btn-row">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Warning"
                            Size="Size.Small"
                            OnClick="RebuildDB"
-                           Class="flex-grow-1 font-size-xs">
+                           Class="action-btn-sm flex-1">
                     Rebuild DB
                 </MudButton>
-                <MudButton Variant="Variant.Outlined" 
-                           Color="Color.Error" 
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Error"
                            Size="Size.Small"
                            OnClick="ClearAll"
-                           Class="flex-grow-1 font-size-xs">
+                           Class="action-btn-sm flex-1">
                     Clear All
                 </MudButton>
             </div>
         </div>
-
-        <div class="mt-auto">
-            <MudNavMenu Class="sidebar-nav">
-                <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
-                <MudNavLink Href="/upload" Icon="@Icons.Material.Filled.Upload">Upload</MudNavLink>
-                <MudNavLink Href="/chat" Icon="@Icons.Material.Filled.Chat">Chat</MudNavLink>
-                <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
-            </MudNavMenu>
-        </div>
     </MudDrawer>
 
-    <MudMainContent Class="main-content-area pa-6">
-        <div class="content-container">
+    <MudMainContent Class="main-content-area">
+        <div class="ambient-glow bg-glow-1"></div>
+        <div class="ambient-glow bg-glow-2"></div>
+        <div class="page-wrapper">
             @Body
         </div>
     </MudMainContent>
 </MudLayout>
 
 <style>
+    /* ===== Ambient Glow Blobs ===== */
+    .ambient-glow {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(120px);
+        opacity: 0.07;
+        z-index: 0;
+        pointer-events: none;
+        transition: opacity 0.5s ease;
+    }
+    .bg-glow-1 {
+        width: 450px;
+        height: 450px;
+        background: #6366f1;
+        top: 15%;
+        left: 25%;
+        animation: pulse-glow-slow 20s infinite alternate;
+    }
+    .bg-glow-2 {
+        width: 550px;
+        height: 550px;
+        background: #ec4899;
+        bottom: 10%;
+        right: 15%;
+        animation: pulse-glow-slow 25s infinite alternate-reverse;
+    }
+    .mud-theme-dark .ambient-glow {
+        opacity: 0.15;
+    }
+    
+    @@keyframes pulse-glow-slow {
+        0% { transform: scale(1) translate(0, 0); }
+        50% { transform: scale(1.15) translate(3%, 4%); }
+        100% { transform: scale(1) translate(-2%, -3%); }
+    }
+
+    /* ===== Layout ===== */
     .main-app-layout {
         min-height: 100vh;
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        background: #f1f4fa;
+        position: relative;
     }
 
-    .appbar-glass {
-        background: rgba(99, 102, 241, 0.85) !important;
-        backdrop-filter: blur(10px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    .mud-theme-dark .main-app-layout {
+        background: #080d1a;
     }
 
-    .app-title {
-        font-weight: 800 !important;
-        letter-spacing: 0.5px;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    /* ===== AppBar ===== */
+    .pro-appbar {
+        background: rgba(255,255,255,0.82) !important;
+        backdrop-filter: blur(16px) saturate(180%);
+        border-bottom: 1px solid rgba(99,102,241,0.12) !important;
+        box-shadow: 0 1px 0 rgba(99,102,241,0.08), 0 4px 16px rgba(0,0,0,0.04) !important;
     }
 
-    .sidebar-drawer {
-        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.05);
+    .mud-theme-dark .pro-appbar {
+        background: rgba(13,21,38,0.88) !important;
+        border-bottom: 1px solid rgba(99,102,241,0.18) !important;
     }
 
-    .sidebar-header {
-        padding: 24px 16px 12px 16px;
-        text-align: center;
+    .menu-btn { opacity: 0.7; transition: opacity 0.2s; }
+    .menu-btn:hover { opacity: 1; }
+
+    .brand-area {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-left: 4px;
     }
 
-    .text-slate-400 {
+    .brand-icon-wrap {
+        width: 36px; height: 36px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 2px 8px rgba(99,102,241,0.4);
+    }
+
+    .brand-icon-svg { font-size: 1.15rem !important; color: white !important; }
+
+    .brand-name {
+        font-weight: 700 !important;
+        font-size: 1rem !important;
+        line-height: 1.2 !important;
+        color: #1e293b;
+        letter-spacing: -0.3px;
+    }
+
+    .mud-theme-dark .brand-name { color: #e2e8f0; }
+
+    .brand-tagline {
+        font-size: 0.68rem !important;
+        color: #6366f1 !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.2px;
+    }
+
+    .appbar-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .provider-chip {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+    }
+
+    .provider-dot {
+        width: 7px; height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+        opacity: 0.9;
+        animation: pulse-dot 2s ease infinite;
+    }
+
+    @@keyframes pulse-dot {
+        0%, 100% { transform: scale(1); opacity: 0.9; }
+        50% { transform: scale(1.3); opacity: 0.6; }
+    }
+
+    .chip-openai { background: rgba(16,163,127,0.12); color: #059669; }
+    .chip-google { background: rgba(66,133,244,0.12); color: #2563eb; }
+    .chip-groq   { background: rgba(245,80,54,0.12);  color: #dc2626; }
+    .chip-ollama { background: rgba(99,102,241,0.12); color: #6366f1; }
+
+    .mud-theme-dark .chip-openai { background: rgba(16,163,127,0.2); color: #34d399; }
+    .mud-theme-dark .chip-google { background: rgba(66,133,244,0.2); color: #60a5fa; }
+    .mud-theme-dark .chip-groq   { background: rgba(245,80,54,0.2);  color: #f87171; }
+    .mud-theme-dark .chip-ollama { background: rgba(99,102,241,0.2); color: #818cf8; }
+
+    .model-label {
+        font-size: 0.72rem;
+        color: #64748b;
+        font-weight: 500;
+        max-width: 160px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .mud-theme-dark .model-label { color: #94a3b8; }
+
+    .divider-v {
+        width: 1px; height: 22px;
+        background: rgba(99,102,241,0.2);
+        margin: 0 4px;
+    }
+
+    .theme-btn { opacity: 0.7; }
+    .theme-btn:hover { opacity: 1; }
+
+    /* ===== Sidebar ===== */
+    .pro-sidebar {
+        background: #0d1526 !important;
+        border-right: 1px solid rgba(99,102,241,0.12) !important;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .sidebar-logo-area {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 20px 16px 14px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .sidebar-logo-icon {
+        width: 36px; height: 36px;
+        background: rgba(99,102,241,0.15);
+        border: 1px solid rgba(99,102,241,0.3);
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .sidebar-logo-title {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #e2e8f0;
+        letter-spacing: -0.2px;
+    }
+
+    .sidebar-logo-sub {
+        font-size: 0.67rem;
+        color: #64748b;
+        font-weight: 500;
+        margin-top: 1px;
+    }
+
+    .sidebar-section {
+        padding: 12px 14px;
+    }
+
+    .sidebar-section-label {
+        font-size: 0.62rem;
+        font-weight: 700;
+        color: #475569;
+        letter-spacing: 0.8px;
+        margin-bottom: 8px;
+        padding-left: 2px;
+    }
+
+    .sidebar-divider {
+        border-top: 1px solid rgba(255,255,255,0.04);
+        margin: 0 14px;
+    }
+
+    /* Navigation */
+    .pro-nav { background: transparent !important; }
+
+    .pro-nav .mud-nav-link {
         color: #94a3b8 !important;
+        border-radius: 8px !important;
+        margin-bottom: 2px !important;
+        padding: 8px 12px !important;
+        font-size: 0.875rem !important;
+        font-weight: 500 !important;
+        transition: all 0.2s ease !important;
+        border: 1px solid transparent !important;
     }
 
-    .text-slate-300 {
-        color: #cbd5e1 !important;
+    .pro-nav .mud-nav-link:hover {
+        background: rgba(99,102,241,0.1) !important;
+        color: #c7d2fe !important;
+        border-color: rgba(99,102,241,0.2) !important;
     }
 
-    .border-slate-700 {
-        border-color: #334155 !important;
+    .pro-nav .mud-nav-link.active {
+        background: rgba(99,102,241,0.18) !important;
+        color: #a5b4fc !important;
+        border-color: rgba(99,102,241,0.35) !important;
+        font-weight: 600 !important;
+        box-shadow: inset 3px 0 0 #6366f1;
     }
 
-    .custom-select .mud-input {
-        color: white !important;
+    .pro-nav .mud-nav-link .mud-nav-link-icon { color: inherit !important; font-size: 1.1rem !important; }
+
+    /* Select */
+    .sidebar-field { margin-bottom: 10px; }
+
+    .pro-select .mud-input { color: #e2e8f0 !important; font-size: 0.85rem !important; }
+    .pro-select .mud-input-label { color: #64748b !important; font-size: 0.78rem !important; }
+    .pro-select .mud-input-outlined-border { border-color: #1e3a5f !important; border-radius: 8px !important; }
+    .pro-select:hover .mud-input-outlined-border { border-color: #6366f1 !important; }
+    .pro-select.mud-input-control-focused .mud-input-outlined-border { border-color: #818cf8 !important; }
+
+    /* Temperature */
+    .temp-control { margin-top: 2px; }
+
+    .temp-label-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
     }
 
-    .custom-select .mud-input-label {
-        color: #94a3b8 !important;
+    .temp-label { font-size: 0.75rem; color: #64748b; font-weight: 500; }
+
+    .temp-value {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #818cf8;
+        background: rgba(99,102,241,0.12);
+        padding: 1px 7px;
+        border-radius: 999px;
     }
 
-    .custom-select .mud-input-outlined-border {
-        border-color: #475569 !important;
+    .pro-slider { margin: 0 !important; }
+    .pro-slider .mud-slider-track { background: #1e3a5f !important; }
+    .pro-slider .mud-slider-filled { background: linear-gradient(90deg, #6366f1, #8b5cf6) !important; }
+    .pro-slider .mud-slider-thumb { background: #6366f1 !important; border: 2px solid white !important; }
+
+    /* Status */
+    .status-list { display: flex; flex-direction: column; gap: 6px; }
+
+    .status-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 10px;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        font-weight: 500;
+        border: 1px solid transparent;
+        transition: all 0.2s;
     }
 
-    .custom-select:hover .mud-input-outlined-border {
-        border-color: #6366f1 !important;
+    .status-ok {
+        background: rgba(16,185,129,0.08);
+        color: #34d399;
+        border-color: rgba(16,185,129,0.2);
     }
 
-    .status-alert {
-        background-color: rgba(30, 41, 59, 0.5) !important;
-        color: #e2e8f0 !important;
-        border: 1px solid #334155 !important;
+    .status-idle {
+        background: rgba(100,116,139,0.08);
+        color: #64748b;
+        border-color: rgba(100,116,139,0.15);
     }
 
-    .feature-bullets {
-        font-size: 0.85rem;
-        line-height: 1.8;
+    .status-icon { font-size: 0.95rem !important; }
+
+    .last-upload-text {
+        font-size: 0.68rem;
+        color: #475569;
+        margin-top: 4px;
+        padding-left: 2px;
     }
 
-    .font-size-xs {
-        font-size: 0.75rem !important;
+    /* Feature pills */
+    .feature-pill-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
     }
 
-    .sidebar-action-btn {
+    .feature-pill {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: #94a3b8;
+        background: rgba(99,102,241,0.08);
+        border: 1px solid rgba(99,102,241,0.18);
+        padding: 3px 9px;
+        border-radius: 999px;
+        letter-spacing: 0.2px;
+        transition: all 0.2s;
+    }
+
+    .feature-pill:hover {
+        background: rgba(99,102,241,0.18);
+        color: #c7d2fe;
+        border-color: rgba(99,102,241,0.35);
+    }
+
+    /* Sidebar Actions */
+    .sidebar-actions { display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px; }
+
+    .action-btn-primary {
+        border-radius: 8px !important;
         text-transform: none !important;
         font-weight: 600 !important;
+        font-size: 0.82rem !important;
+        letter-spacing: 0.1px !important;
     }
 
-    .sidebar-nav {
-        background: rgba(15, 23, 42, 0.5);
-        border-top: 1px solid #1e293b;
+    .action-btn-row { display: flex; gap: 8px; }
+
+    .action-btn-sm {
+        border-radius: 8px !important;
+        text-transform: none !important;
+        font-weight: 600 !important;
+        font-size: 0.75rem !important;
+        flex: 1;
     }
 
-    .sidebar-nav .mud-nav-link {
-        color: #cbd5e1 !important;
-    }
+    /* ===== Main Content ===== */
+    .main-content-area { background: transparent; }
 
-    .sidebar-nav .mud-nav-link.active {
-        background-color: rgba(99, 102, 241, 0.15) !important;
-        color: #818cf8 !important;
-        font-weight: 600;
-        border-left: 4px solid #6366f1;
-    }
-
-    .provider-badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: bold;
-        margin-right: 8px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
-
-    .provider-openai { background: #10a37f; color: white; }
-    .provider-google { background: #4285f4; color: white; }
-    .provider-groq { background: #f55036; color: white; }
-    .provider-ollama { background: #6366f1; color: white; }
-
-    .content-container {
-        max-width: 1200px;
+    .page-wrapper {
+        max-width: 1100px;
         margin: 0 auto;
-        animation: fadeIn 0.5s ease-in-out;
+        padding: 28px 24px;
+        animation: fadeSlideUp 0.4s ease-out both;
     }
 
-    @@keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
+    @@keyframes fadeSlideUp {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
     }
+
+    /* ===== Provider Badge classes used in code ===== */
+    .provider-openai { background: rgba(16,163,127,0.12); color: #059669; }
+    .provider-google { background: rgba(66,133,244,0.12); color: #2563eb; }
+    .provider-groq   { background: rgba(245,80,54,0.12);  color: #dc2626; }
+    .provider-ollama { background: rgba(99,102,241,0.12); color: #6366f1; }
 </style>
 
 @code {
@@ -318,17 +587,17 @@
             Primary = "#6366f1",
             Secondary = "#8b5cf6",
             Tertiary = "#ec4899",
-            Background = "#f8fafc",
-            AppbarBackground = "#6366f1"
+            Background = "#f0f2f8",
+            AppbarBackground = "#ffffff"
         },
         PaletteDark = new PaletteDark()
         {
             Primary = "#818cf8",
             Secondary = "#a78bfa",
             Tertiary = "#f472b6",
-            Background = "#0f172a",
-            Surface = "#1e293b",
-            AppbarBackground = "#1e293b"
+            Background = "#080e1c",
+            Surface = "#0d1526",
+            AppbarBackground = "#0d1526"
         }
     };
 
@@ -383,11 +652,11 @@
     {
         return provider switch
         {
-            AIProvider.OpenAI => "provider-openai",
-            AIProvider.Google => "provider-google",
-            AIProvider.Groq => "provider-groq",
-            AIProvider.Ollama => "provider-ollama",
-            _ => "provider-ollama"
+            AIProvider.OpenAI => "provider-chip chip-openai",
+            AIProvider.Google => "provider-chip chip-google",
+            AIProvider.Groq   => "provider-chip chip-groq",
+            AIProvider.Ollama => "provider-chip chip-ollama",
+            _ => "provider-chip chip-ollama"
         };
     }
 

@@ -7,23 +7,30 @@
 
 <!-- Hero -->
 <div class="settings-hero mb-6">
-    <h2>⚙️ AI Provider Settings</h2>
+    <h1>⚙️ AI Provider Settings</h1>
     <p>Configure which AI engine powers your document queries</p>
 </div>
 
 <!-- Current Config Banner -->
-<MudAlert Severity="Severity.Info" Class="mb-5 current-config-alert" Dense="false">
-    <div class="d-flex align-center gap-3 flex-wrap">
-        <span>🤖 <strong>Active:</strong> @SessionState.SelectedProvider</span>
-        <span>|</span>
-        <span>📦 <strong>Model:</strong> @SessionState.SelectedModel</span>
-        <span>|</span>
-        <span>🌡️ <strong>Temperature:</strong> @SessionState.Temperature.ToString("F1")</span>
+<div class="config-strip mb-5">
+    <div class="config-item">
+        <span>🤖</span><strong>Active:</strong> @SessionState.SelectedProvider
     </div>
-</MudAlert>
+    <div class="config-divider"></div>
+    <div class="config-item">
+        <span>📦</span><strong>Model:</strong> @SessionState.SelectedModel
+    </div>
+    <div class="config-divider"></div>
+    <div class="config-item">
+        <span>🌡️</span><strong>Temperature:</strong> @SessionState.Temperature.ToString("F1")
+    </div>
+</div>
 
 <!-- Provider Cards -->
-<MudText Typo="Typo.h6" Class="mb-3 font-weight-bold">🔌 Choose Your AI Provider</MudText>
+<div class="settings-section-title mb-3">
+    <MudIcon Icon="@Icons.Material.Filled.Power" Style="font-size:1rem;color:#6366f1;" />
+    Choose Your AI Provider
+</div>
 <MudGrid Spacing="3" Class="mb-6">
 
     <!-- Groq -->
@@ -164,11 +171,9 @@
 </MudGrid>
 
 <!-- Temperature Slider -->
-<MudPaper Class="pa-5 mb-6 temp-card" Elevation="2">
-    <MudText Typo="Typo.h6" Class="font-weight-bold mb-1">🌡️ Creativity / Temperature</MudText>
-    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
-        Controls how creative the AI is. Low = precise facts, High = creative/exploratory.
-    </MudText>
+<MudPaper Class="pa-5 mb-6 temp-card" Elevation="0">
+    <div class="temp-title">🌡️ Creativity / Temperature</div>
+    <div class="temp-subtitle">Controls how creative the AI is. Low = precise facts, High = creative/exploratory.</div>
 
     <div class="temp-slider-row">
         <span class="temp-label-end">🎯 Precise (0.0)</span>
@@ -181,157 +186,256 @@
         <span class="temp-label-end">🎨 Creative (1.0)</span>
     </div>
 
-    <div class="text-center mt-2">
-        <MudChip T="string" Color="Color.Secondary" Size="Size.Large" Class="font-weight-bold">
-            Current: @SessionState.Temperature.ToString("F1") — @GetTemperatureLabel()
-        </MudChip>
+    <div class="text-center mt-3">
+        <span class="temp-value-chip">
+            @SessionState.Temperature.ToString("F1") — @GetTemperatureLabel()
+        </span>
     </div>
 
-    <div class="temp-hints mt-3">
-        <div class="temp-hint-item">
-            <strong>0.0</strong> — Deterministic, best for factual document Q&A
-        </div>
-        <div class="temp-hint-item">
-            <strong>0.3–0.5</strong> — Balanced, good for summaries and analysis
-        </div>
-        <div class="temp-hint-item">
-            <strong>0.7–1.0</strong> — Creative, good for brainstorming
-        </div>
+    <div class="temp-hints mt-4">
+        <div class="temp-hint-item"><strong>0.0</strong> Deterministic, best for factual document Q&amp;A</div>
+        <div class="temp-hint-item"><strong>0.3–0.5</strong> Balanced, good for summaries and analysis</div>
+        <div class="temp-hint-item"><strong>0.7–1.0</strong> Creative, good for brainstorming</div>
     </div>
 </MudPaper>
 
 
 <!-- Save Button -->
 <div class="text-center mt-4 mb-8">
-    <MudButton Variant="Variant.Filled"
-               Color="Color.Primary"
-               Size="Size.Large"
-               OnClick="SaveSettings"
-               StartIcon="@Icons.Material.Filled.Save"
-               Class="save-settings-btn">
-        💾 Save Settings
-    </MudButton>
+    <button class="save-settings-btn" @onclick="SaveSettings">
+        <MudIcon Icon="@Icons.Material.Filled.Save" Style="font-size:1.1rem;" />
+        Save Settings
+    </button>
 </div>
 
 <style>
+    /* ── Hero ── */
     .settings-hero {
-        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
         color: white;
-        padding: 2.5rem 2rem;
-        border-radius: 16px;
+        padding: 2.75rem 2rem 2.5rem;
+        border-radius: 20px;
         text-align: center;
-        box-shadow: 0 6px 20px rgba(30,41,59,0.3);
     }
-    .settings-hero h2 { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; }
-    .settings-hero p  { opacity: 0.8; font-size: 1rem; }
+    .settings-hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at 70% 50%, rgba(99,102,241,0.35), transparent 60%);
+        pointer-events: none;
+    }
+    .settings-hero h1 { font-size: 2.2rem; font-weight: 800; margin: 0 0 0.5rem; letter-spacing: -0.5px; position: relative; }
+    .settings-hero p  { opacity: 0.75; font-size: 1rem; margin: 0; position: relative; }
 
-    .current-config-alert { border-radius: 12px !important; }
+    /* ── Current Config Strip ── */
+    .config-strip {
+        display: flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(12px) saturate(180%);
+        -webkit-backdrop-filter: blur(12px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 14px;
+        padding: 0.85rem 1.25rem;
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .mud-theme-dark .config-strip {
+        background: rgba(13, 22, 42, 0.55);
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .config-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.86rem;
+        color: #475569;
+    }
+    .config-item strong { color: #1e293b; font-weight: 700; }
+    .config-divider { width: 1px; height: 18px; background: #e2e8f0; margin: 0 4px; }
 
-    /* Provider cards */
+    /* ── Section Title ── */
+    .settings-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* ── Provider Cards ── */
     .provider-card {
-        border: 2px solid #e2e8f0;
-        border-radius: 16px;
+        border: 1.5px solid rgba(255, 255, 255, 0.5);
+        border-radius: 18px;
         overflow: hidden;
         cursor: pointer;
-        transition: all 0.25s ease;
-        background: white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.3);
     }
     .provider-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 10px 28px rgba(0,0,0,0.12);
-        border-color: #818cf8;
+        box-shadow: 0 16px 36px rgba(99, 102, 241, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        border-color: rgba(99, 102, 241, 0.3);
     }
     .provider-card-active {
         border-color: #6366f1 !important;
-        box-shadow: 0 0 0 3px rgba(99,102,241,0.2), 0 8px 24px rgba(0,0,0,0.1) !important;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2), 0 12px 36px rgba(99, 102, 241, 0.15) !important;
+    }
+    .mud-theme-dark .provider-card {
+        background: rgba(13, 22, 42, 0.55);
+        border-color: rgba(255, 255, 255, 0.07);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .mud-theme-dark .provider-card:hover {
+        border-color: rgba(99, 102, 241, 0.35);
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
     }
 
     .provider-card-header {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 16px 20px;
+        gap: 14px;
+        padding: 18px 20px;
         color: white;
         position: relative;
+        overflow: hidden;
     }
-    .provider-header-groq   { background: linear-gradient(135deg, #f55036, #ff8c00); }
-    .provider-header-openai { background: linear-gradient(135deg, #10a37f, #008060); }
-    .provider-header-google { background: linear-gradient(135deg, #4285f4, #0f52ba); }
+    .provider-card-header::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+        pointer-events: none;
+    }
+    .provider-header-groq   { background: linear-gradient(135deg, #f55036, #ff6b35); }
+    .provider-header-openai { background: linear-gradient(135deg, #10a37f, #00765a); }
+    .provider-header-google { background: linear-gradient(135deg, #4285f4, #1a56cc); }
     .provider-header-ollama { background: linear-gradient(135deg, #6366f1, #4338ca); }
 
-    .provider-icon { font-size: 2rem; }
-    .provider-name { font-size: 1.1rem; font-weight: 700; }
-    .provider-tag  { font-size: 0.78rem; opacity: 0.85; }
+    .provider-icon {
+        font-size: 1.8rem;
+        flex-shrink: 0;
+        width: 48px; height: 48px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        backdrop-filter: blur(4px);
+    }
+    .provider-name { font-size: 1.1rem; font-weight: 800; }
+    .provider-tag  { font-size: 0.76rem; opacity: 0.82; font-weight: 500; margin-top: 1px; }
     .active-badge  {
         position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
-        background: rgba(255,255,255,0.25);
-        padding: 3px 10px; border-radius: 100px;
-        font-size: 0.78rem; font-weight: 600;
+        background: rgba(255,255,255,0.22);
+        backdrop-filter: blur(4px);
+        padding: 4px 12px; border-radius: 100px;
+        font-size: 0.76rem; font-weight: 700;
+        border: 1px solid rgba(255,255,255,0.3);
+        z-index: 1;
     }
 
-    .provider-card-body { padding: 16px 20px; }
-    .provider-desc { font-size: 0.86rem; color: #64748b; margin-bottom: 12px; }
+    .provider-card-body { padding: 16px 20px 18px; }
+    .provider-desc { font-size: 0.84rem; color: #64748b; margin-bottom: 12px; line-height: 1.5; }
 
     .model-chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .model-chip {
-        padding: 4px 10px;
+        padding: 4px 12px;
         border-radius: 100px;
-        font-size: 0.75rem;
-        font-weight: 500;
+        font-size: 0.74rem;
+        font-weight: 600;
         background: #f1f5f9;
         color: #475569;
-        border: 1px solid #e2e8f0;
+        border: 1.5px solid #e2e8f0;
         cursor: pointer;
         transition: all 0.15s;
     }
     .model-chip:hover { background: #e0e7ff; color: #4338ca; border-color: #a5b4fc; }
-    .model-chip-active { background: #6366f1 !important; color: white !important; border-color: #4338ca !important; }
+    .model-chip-active { background: #6366f1 !important; color: white !important; border-color: #4338ca !important; box-shadow: 0 2px 8px rgba(99,102,241,0.3); }
 
     .provider-meta { display: flex; flex-wrap: wrap; gap: 6px; }
     .meta-badge {
         padding: 3px 10px; border-radius: 100px;
-        font-size: 0.72rem; font-weight: 600;
+        font-size: 0.71rem; font-weight: 700;
+        letter-spacing: 0.2px;
     }
     .meta-green  { background: #dcfce7; color: #15803d; }
     .meta-blue   { background: #dbeafe; color: #1d4ed8; }
-    .meta-yellow { background: #fef9c3; color: #854d0e; }
+    .meta-yellow { background: #fef3c7; color: #92400e; }
     .meta-purple { background: #ede9fe; color: #5b21b6; }
     .meta-gray   { background: #f1f5f9; color: #475569; }
 
-    /* Temperature */
-    .temp-card { border-radius: 16px !important; }
-    .temp-slider-row { display: flex; align-items: center; gap: 8px; }
-    .temp-label-end { font-size: 0.78rem; color: #64748b; white-space: nowrap; }
-    .temp-hints { display: flex; flex-direction: column; gap: 4px; }
-    .temp-hint-item { font-size: 0.82rem; color: #64748b; padding: 4px 0; border-bottom: 1px solid #f1f5f9; }
-
-    /* .env code block */
-    .env-code-block {
-        background: #1e293b !important;
-        border-radius: 12px !important;
+    /* ── Temperature Card ── */
+    .temp-card {
+        background: rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        border: 1.5px solid rgba(255, 255, 255, 0.5);
+        border-radius: 18px !important;
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.3);
     }
-    .env-code {
-        color: #a5f3fc;
-        font-family: 'Consolas', 'Courier New', monospace;
-        font-size: 0.88rem;
-        line-height: 1.8;
-        margin: 0;
-        white-space: pre;
+    .mud-theme-dark .temp-card {
+        background: rgba(13, 22, 42, 0.55);
+        border-color: rgba(255, 255, 255, 0.07);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
+    .temp-title {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 4px;
+    }
+    .temp-subtitle { font-size: 0.84rem; color: #64748b; margin-bottom: 1.25rem; }
+    .temp-slider-row { display: flex; align-items: center; gap: 10px; }
+    .temp-label-end { font-size: 0.78rem; color: #64748b; white-space: nowrap; font-weight: 500; }
+    .temp-value-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        font-size: 0.9rem;
+        font-weight: 700;
+        padding: 8px 20px;
+        border-radius: 100px;
+        box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+    }
+    .temp-hints { display: flex; flex-direction: column; gap: 0; }
+    .temp-hint-item {
+        font-size: 0.8rem;
+        color: #64748b;
+        padding: 8px 0;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .temp-hint-item strong { color: #4f46e5; }
 
+    /* ── Save Button ── */
     .save-settings-btn {
-        padding: 0.9rem 3rem !important;
-        font-size: 1.05rem !important;
-        font-weight: 700 !important;
-        border-radius: 12px !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white !important;
+        font-size: 1.05rem;
+        font-weight: 700;
+        padding: 1rem 3rem;
+        border-radius: 14px;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 6px 24px rgba(99,102,241,0.35);
+        transition: all 0.3s;
         text-transform: none !important;
-        box-shadow: 0 6px 20px rgba(99,102,241,0.3) !important;
     }
-    .save-settings-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 28px rgba(99,102,241,0.4) !important;
-    }
+    .save-settings-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(99,102,241,0.45); }
 </style>
 
 @code {

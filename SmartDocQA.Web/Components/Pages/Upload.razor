@@ -12,41 +12,49 @@
 <PageTitle>Upload - SmartDoc QA</PageTitle>
 
 <!-- Hero -->
-<div class="upload-hero mb-6">
-    <h2>📤 Upload Your Documents</h2>
-    <p>AI-powered document analysis · Up to 10 files · 100 MB each</p>
+<div class="page-hero upload-hero mb-6">
+    <div class="page-hero-glow"></div>
+    <div class="page-hero-content">
+        <div class="page-hero-badge">
+            <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Style="font-size:0.85rem;" />
+            <span>Up to 10 files &nbsp;·&nbsp; 100 MB each &nbsp;·&nbsp; Local Processing</span>
+        </div>
+        <h1 class="page-hero-title">Upload Documents</h1>
+        <p class="page-hero-sub">AI-powered extraction from PDF, Excel, images and more</p>
+    </div>
 </div>
 
 <!-- Fresh Start Notice -->
 @if (freshStartTriggered)
 {
-    <MudAlert Severity="Severity.Success" Class="fresh-start-alert mb-4" Dense="false">
-        <div class="d-flex flex-column gap-1">
-            <strong>🆕 Fresh Start — All Old Data Cleared!</strong>
-            <div>✅ Old tabular data removed</div>
-            <div>✅ Old vector database deleted</div>
-            <div>✅ Processing @totalFilesSelected NEW file(s) only</div>
-            <div style="font-size: 0.85rem; opacity: 0.85; margin-top: 4px;">
-                Questions will be answered ONLY from these new files
+    <div class="fresh-notice mb-4">
+        <div class="fresh-notice-icon">
+            <MudIcon Icon="@Icons.Material.Filled.RestartAlt" Style="color:#818cf8;font-size:1.2rem;" />
+        </div>
+        <div class="fresh-notice-body">
+            <div class="fresh-notice-title">Fresh Start — All Previous Data Cleared</div>
+            <div class="fresh-notice-items">
+                <span>✓ Old tabular data removed</span>
+                <span>✓ Vector database deleted</span>
+                <span>✓ Processing @totalFilesSelected new file(s)</span>
             </div>
         </div>
-    </MudAlert>
+    </div>
 }
 
 <!-- File Upload Area -->
-<MudPaper Class="pa-6 mb-4 upload-card" Elevation="2">
+<div class="upload-zone-card mb-4">
     <div class="drop-zone">
-        <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
-        <MudText Typo="Typo.h6" Class="mb-1 font-weight-bold">Drop files here or click to browse</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
-            Hold <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> to select multiple files at once
-        </MudText>
+        <div class="upload-icon-ring">
+            <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Style="font-size:2rem;color:#6366f1;" />
+        </div>
+        <div class="drop-title">Drop files here or click to browse</div>
+        <div class="drop-hint">Hold <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> to select multiple files at once</div>
 
-        <!-- Supported formats chips -->
-        <div class="d-flex flex-wrap justify-center gap-1 mb-4">
+        <div class="format-chips-row">
             @foreach (var fmt in new[] { "PDF", "DOCX", "XLSX", "XLS", "CSV", "TXT", "PNG", "JPG", "JPEG" })
             {
-                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined" Class="format-chip">@fmt</MudChip>
+                <span class="fmt-chip">@fmt</span>
             }
         </div>
 
@@ -55,81 +63,83 @@
                    accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.png,.jpg,.jpeg"
                    id="fileInput"
                    class="hidden-input" />
-        <label for="fileInput" class="upload-label mud-button-root mud-button mud-button-filled mud-button-filled-primary mud-elevation-2 @(isProcessing ? "disabled-label" : "")">
-            <span class="mud-button-label">@(isProcessing ? "⏳ Processing..." : "📁 Choose Files (up to 10)")</span>
+        <label for="fileInput" class="upload-cta @(isProcessing ? "upload-cta-disabled" : "")">
+            <MudIcon Icon="@(isProcessing ? Icons.Material.Filled.HourglassBottom : Icons.Material.Filled.FolderOpen)" Style="font-size:1.05rem;" />
+            @(isProcessing ? "Processing..." : "Choose Files (up to 10)")
         </label>
 
-        <!-- Limits info -->
-        <div class="limits-row mt-3">
-            <span class="limit-badge">📂 Max 10 files</span>
-            <span class="limit-badge">💾 Max 100 MB each</span>
-            <span class="limit-badge">🔒 Secure local processing</span>
+        <div class="limits-row">
+            <span class="limit-pill">
+                <MudIcon Icon="@Icons.Material.Filled.Folder" Style="font-size:0.8rem;" /> Max 10 files
+            </span>
+            <span class="limit-pill">
+                <MudIcon Icon="@Icons.Material.Filled.Memory" Style="font-size:0.8rem;" /> 100 MB each
+            </span>
+            <span class="limit-pill">
+                <MudIcon Icon="@Icons.Material.Filled.Lock" Style="font-size:0.8rem;" /> Local processing
+            </span>
         </div>
     </div>
 
-    <!-- Progress Bar -->
     @if (isProcessing)
     {
-        <div class="mt-4 progress-section">
-            <div class="d-flex justify-space-between align-center mb-1">
-                <MudText Typo="Typo.body2" Color="Color.Primary"><strong>🔄 @currentFile</strong></MudText>
-                <MudText Typo="Typo.caption">@processedCount / @totalFilesSelected files</MudText>
+        <div class="progress-section">
+            <div class="progress-header">
+                <span class="progress-file">@currentFile</span>
+                <span class="progress-count">@processedCount / @totalFilesSelected</span>
             </div>
-            <MudProgressLinear Color="Color.Primary"
-                               Value="@progressValue"
-                               Rounded="true"
-                               Size="Size.Medium"
-                               Class="mb-2" />
-            <MudText Typo="Typo.caption" Class="text-center opacity-70">@processingStatus</MudText>
+            <MudProgressLinear Color="Color.Primary" Value="@progressValue" Rounded="true" Size="Size.Medium" Class="mb-2" />
+            <div class="progress-status">@processingStatus</div>
         </div>
     }
-</MudPaper>
+</div>
 
-<!-- Success & Error Lists (shown during/after upload) -->
+<!-- Success & Error Lists -->
 @if (successFiles.Any() || errorFiles.Any())
 {
     <MudGrid Spacing="3" Class="mb-4">
         @if (successFiles.Any())
         {
             <MudItem xs="12" md="@(errorFiles.Any() ? 6 : 12)">
-                <MudPaper Class="pa-4 result-card result-success" Elevation="2">
-                    <MudText Typo="Typo.subtitle1" Class="font-weight-bold mb-3">
-                        ✅ Successfully Processed (@successFiles.Count)
-                    </MudText>
+                <div class="result-card result-success">
+                    <div class="result-card-title">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color:#10b981;font-size:1.1rem;" />
+                        Successfully Processed (@successFiles.Count)
+                    </div>
                     @foreach (var f in successFiles)
                     {
-                        <div class="result-item success-item">
-                            <span class="result-icon">@GetFileIcon(System.IO.Path.GetExtension(f.Name).TrimStart('.'))</span>
+                        <div class="result-item">
+                            <span class="result-file-icon">@GetFileIcon(System.IO.Path.GetExtension(f.Name).TrimStart('.'))</span>
                             <div class="result-info">
                                 <span class="result-name">@f.Name</span>
-                                <span class="result-size">@FormatFileSize(f.Size)</span>
+                                <span class="result-meta">@FormatFileSize(f.Size)</span>
                             </div>
-                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color:#10b981;" />
                         </div>
                     }
-                </MudPaper>
+                </div>
             </MudItem>
         }
-
         @if (errorFiles.Any())
         {
             <MudItem xs="12" md="@(successFiles.Any() ? 6 : 12)">
-                <MudPaper Class="pa-4 result-card result-error" Elevation="2">
-                    <MudText Typo="Typo.subtitle1" Class="font-weight-bold mb-3">
-                        ❌ Failed Files (@errorFiles.Count)
-                    </MudText>
+                <div class="result-card result-error">
+                    <div class="result-card-title">
+                        <MudIcon Icon="@Icons.Material.Filled.Error" Style="color:#ef4444;font-size:1.1rem;" />
+                        Failed (@errorFiles.Count)
+                    </div>
                     @foreach (var f in errorFiles)
                     {
-                        <div class="result-item error-item">
-                            <span class="result-icon">⚠️</span>
+                        <div class="result-item">
+                            <span class="result-file-icon">⚠️</span>
                             <div class="result-info">
                                 <span class="result-name">@f.Name</span>
-                                <span class="result-error-msg">@f.Error</span>
+                                <span class="result-meta result-error-txt">@f.Error</span>
                             </div>
-                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+                            <MudIcon Icon="@Icons.Material.Filled.Error" Style="color:#ef4444;" />
                         </div>
                     }
-                </MudPaper>
+                </div>
             </MudItem>
         }
     </MudGrid>
@@ -138,88 +148,74 @@
 <!-- Processed Documents -->
 @if (SessionState.ExtractedDocuments.Any() || SessionState.TabularData != null)
 {
-    <!-- Stats Row -->
-    <MudGrid Class="mb-4" Spacing="3">
-        <MudItem xs="12" sm="4">
-            <div class="stat-card">
-                <div class="stat-value">@(SessionState.ExtractedDocuments.Count + (SessionState.TabularData != null ? 1 : 0))</div>
-                <div class="stat-label">Documents Loaded</div>
-            </div>
-        </MudItem>
-        <MudItem xs="12" sm="4">
-            <div class="stat-card">
-                <div class="stat-value">@GetTotalChars()</div>
-                <div class="stat-label">Characters Indexed</div>
-            </div>
-        </MudItem>
-        <MudItem xs="12" sm="4">
-            <div class="stat-card @(vectorDbBuilt ? "stat-card-success" : "")">
-                <div class="stat-value">@(vectorDbBuilt ? "✅" : "⏳")</div>
-                <div class="stat-label">@(vectorDbBuilt ? "Vector DB Ready" : "Building...")</div>
-            </div>
-        </MudItem>
-    </MudGrid>
+    <div class="stats-row mb-5">
+        <div class="stat-tile">
+            <div class="stat-tile-val">@(SessionState.ExtractedDocuments.Count + (SessionState.TabularData != null ? 1 : 0))</div>
+            <div class="stat-tile-label">Documents Loaded</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-val">@GetTotalChars()</div>
+            <div class="stat-tile-label">Characters Indexed</div>
+        </div>
+        <div class="stat-tile @(vectorDbBuilt ? "stat-tile-ok" : "")">
+            <div class="stat-tile-val">@(vectorDbBuilt ? "✓" : "⏳")</div>
+            <div class="stat-tile-label">@(vectorDbBuilt ? "Vector DB Ready" : "Building...")</div>
+        </div>
+    </div>
 
-    <!-- Document Cards -->
-    <MudText Typo="Typo.h6" Class="mb-3 font-weight-bold">📁 Processed Documents</MudText>
+    <div class="section-label mb-3">
+        <MudIcon Icon="@Icons.Material.Filled.Folder" Style="font-size:1rem;color:#6366f1;" />
+        Processed Documents
+    </div>
     <MudGrid Spacing="3">
         @if (SessionState.TabularData != null)
         {
             <MudItem xs="12" sm="6" md="4">
-                <MudCard Class="doc-card doc-card-tabular">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h6">
-                                @(SessionState.TabularFileType == "Excel" ? "📊" : "📋")
-                                @SessionState.TabularDocument?.FileName
-                            </MudText>
-                            <MudText Typo="Typo.caption">@SessionState.TabularFileType Data</MudText>
-                        </CardHeaderContent>
-                        <CardHeaderActions>
-                            <MudChip T="string" Size="Size.Small" Color="Color.Success">LOADED</MudChip>
-                        </CardHeaderActions>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudText Typo="Typo.body2"><strong>Rows:</strong> @SessionState.TabularData.Rows.Count</MudText>
-                        <MudText Typo="Typo.body2"><strong>Columns:</strong> @SessionState.TabularData.Columns.Count</MudText>
-                    </MudCardContent>
-                </MudCard>
+                <div class="doc-tile doc-tile-data">
+                    <div class="doc-tile-top">
+                        <span class="doc-file-icon">@(SessionState.TabularFileType == "Excel" ? "📊" : "📋")</span>
+                        <div class="doc-tile-info">
+                            <div class="doc-tile-name">@SessionState.TabularDocument?.FileName</div>
+                            <div class="doc-tile-type">@SessionState.TabularFileType Data</div>
+                        </div>
+                        <span class="doc-badge badge-green">LOADED</span>
+                    </div>
+                    <div class="doc-tile-meta">
+                        <span>@SessionState.TabularData.Rows.Count rows</span>
+                        <span>@SessionState.TabularData.Columns.Count columns</span>
+                    </div>
+                </div>
             </MudItem>
         }
-
         @foreach (var doc in SessionState.ExtractedDocuments)
         {
             <MudItem xs="12" sm="6" md="4">
-                <MudCard Class="doc-card">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h6">@GetFileIcon(doc.FileType) @doc.FileName</MudText>
-                            <MudText Typo="Typo.caption">@doc.FileType.ToUpper()</MudText>
-                        </CardHeaderContent>
-                        <CardHeaderActions>
-                            <MudChip T="string" Size="Size.Small" Color="Color.Primary">INDEXED</MudChip>
-                        </CardHeaderActions>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        @if (doc.PageCount > 0)
-                        {
-                            <MudText Typo="Typo.body2"><strong>@GetCountLabel(doc.FileType):</strong> @doc.PageCount.ToString("N0")</MudText>
-                        }
-                        <MudText Typo="Typo.body2"><strong>Characters:</strong> @doc.Content.Length.ToString("N0")</MudText>
-                    </MudCardContent>
-                </MudCard>
+                <div class="doc-tile">
+                    <div class="doc-tile-top">
+                        <span class="doc-file-icon">@GetFileIcon(doc.FileType)</span>
+                        <div class="doc-tile-info">
+                            <div class="doc-tile-name">@doc.FileName</div>
+                            <div class="doc-tile-type">@doc.FileType.ToUpper()</div>
+                        </div>
+                        <span class="doc-badge badge-indigo">INDEXED</span>
+                    </div>
+                    <div class="doc-tile-meta">
+                        @if (doc.PageCount > 0) { <span>@doc.PageCount.ToString("N0") @GetCountLabel(doc.FileType)</span> }
+                        <span>@doc.Content.Length.ToString("N0") chars</span>
+                    </div>
+                </div>
             </MudItem>
         }
     </MudGrid>
 
-    <!-- Tabular Data Preview -->
     @if (SessionState.TabularData != null)
     {
-        <MudText Typo="Typo.h6" Class="mt-6 mb-3 font-weight-bold">
-            📊 Data Preview (First 5 Rows)
-        </MudText>
-        <MudPaper Elevation="2" Class="overflow-x-auto">
-            <MudTable Items="@GetPreviewRows()" Dense="true" Striped="true" Bordered="true" Elevation="0">
+        <div class="section-label mt-6 mb-3">
+            <MudIcon Icon="@Icons.Material.Filled.TableChart" Style="font-size:1rem;color:#6366f1;" />
+            Data Preview — First 5 Rows
+        </div>
+        <MudPaper Elevation="0" Class="table-wrap">
+            <MudTable Items="@GetPreviewRows()" Dense="true" Striped="true" Bordered="true" Elevation="0" Class="pro-table">
                 <HeaderContent>
                     @foreach (DataColumn col in SessionState.TabularData.Columns)
                     {
@@ -227,192 +223,382 @@
                     }
                 </HeaderContent>
                 <RowTemplate>
-                    @foreach (var val in context)
-                    {
-                        <MudTd>@val</MudTd>
-                    }
+                    @foreach (var val in context) { <MudTd>@val</MudTd> }
                 </RowTemplate>
             </MudTable>
         </MudPaper>
 
-        <!-- Column Reference -->
-        <div class="columns-info mt-4 pa-4">
-            <MudText Typo="Typo.subtitle2" Class="font-weight-bold mb-2">
-                📋 Available Columns (exact names):
-            </MudText>
-            <div class="d-flex flex-wrap gap-2">
+        <div class="col-ref-card mt-4">
+            <div class="col-ref-title">
+                <MudIcon Icon="@Icons.Material.Filled.ViewColumn" Style="font-size:0.95rem;color:#6366f1;" />
+                Available Columns
+            </div>
+            <div class="col-chips-row">
                 @foreach (DataColumn col in SessionState.TabularData.Columns)
                 {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">@col.ColumnName</MudChip>
+                    <span class="col-chip">@col.ColumnName</span>
                 }
             </div>
-            <MudText Typo="Typo.caption" Class="mt-2 opacity-70">
-                💡 Tip: Use exact column names or Excel cell references like <strong>E46</strong>, <strong>A10</strong> in the Chat
-            </MudText>
+            <div class="col-ref-hint">
+                💡 Use exact column names or cell references like <strong>E46</strong>, <strong>A10</strong> in Chat
+            </div>
         </div>
     }
 
-    <!-- Go To Chat -->
-    <div class="text-center mt-6">
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   Href="/chat"
-                   Size="Size.Large"
-                   StartIcon="@Icons.Material.Filled.Chat"
-                   Class="go-chat-btn">
-            💬 Go to Chat → Ask Questions
-        </MudButton>
+    <div class="text-center mt-6 mb-2">
+        <a href="/chat" class="go-chat-cta">
+            <MudIcon Icon="@Icons.Material.Filled.SmartToy" Style="font-size:1.1rem;" />
+            Go to Chat — Ask Questions
+            <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Style="font-size:1rem;" />
+        </a>
     </div>
 }
 
 <style>
-    .upload-hero {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 2.5rem 2rem;
-        border-radius: 16px;
+    /* ── Hero ── */
+    .page-hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 20px;
+        padding: 2.75rem 2rem 2.5rem;
         text-align: center;
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+        color: white;
     }
-    .upload-hero h2 { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; }
-    .upload-hero p  { font-size: 1rem; opacity: 0.9; }
+    .upload-hero { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4c1d95 100%); }
+    .page-hero-glow {
+        position: absolute; inset: 0;
+        background: radial-gradient(ellipse at 50% -20%, rgba(139,92,246,0.5) 0%, transparent 65%);
+        pointer-events: none;
+    }
+    .page-hero-content { position: relative; z-index: 1; }
+    .page-hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 100px;
+        padding: 4px 14px;
+        font-size: 0.78rem;
+        font-weight: 500;
+        margin-bottom: 1rem;
+        backdrop-filter: blur(6px);
+    }
+    .page-hero-title {
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin: 0 0 0.5rem;
+        letter-spacing: -0.5px;
+    }
+    .page-hero-sub { font-size: 1rem; opacity: 0.8; margin: 0; }
 
-    .fresh-start-alert {
-        background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%) !important;
-        color: white !important;
-        border: 2px solid gold !important;
+    /* ── Fresh Notice ── */
+    .fresh-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        background: linear-gradient(135deg, rgba(129,140,248,0.1), rgba(196,181,253,0.1));
+        border: 1px solid rgba(129,140,248,0.35);
+        border-radius: 14px;
+        padding: 1rem 1.25rem;
     }
+    .fresh-notice-icon {
+        width: 36px; height: 36px;
+        background: rgba(129,140,248,0.15);
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .fresh-notice-title { font-size: 0.92rem; font-weight: 700; color: #4338ca; margin-bottom: 4px; }
+    .fresh-notice-items { display: flex; gap: 12px; flex-wrap: wrap; }
+    .fresh-notice-items span { font-size: 0.8rem; color: #6366f1; font-weight: 500; }
 
-    .upload-card {
-        border: 2px dashed #c7d2fe;
-        border-radius: 16px !important;
-        background: linear-gradient(135deg, #f5f7ff 0%, #faf5ff 100%) !important;
-        transition: border-color 0.3s ease;
+    /* ── Upload Zone ── */
+    .upload-zone-card {
+        background: rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        border: 2px dashed rgba(99, 102, 241, 0.35);
+        border-radius: 20px;
+        overflow: hidden;
+        transition: all 0.3s;
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.3);
     }
-    .upload-card:hover { border-color: #6366f1; }
+    .upload-zone-card:hover {
+        border-color: #6366f1;
+        background: rgba(255, 255, 255, 0.55);
+        box-shadow: 0 12px 36px rgba(99, 102, 241, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+    .mud-theme-dark .upload-zone-card {
+        background: rgba(13, 22, 42, 0.55);
+        border-color: rgba(99, 102, 241, 0.3);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .mud-theme-dark .upload-zone-card:hover {
+        background: rgba(13, 22, 42, 0.65);
+        border-color: #818cf8;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
 
     .drop-zone {
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 2rem 1rem;
+        padding: 2.5rem 1.5rem 2rem;
+    }
+    .upload-icon-ring {
+        width: 72px; height: 72px;
+        background: rgba(99,102,241,0.08);
+        border: 2px solid rgba(99,102,241,0.2);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 1rem;
+        transition: all 0.3s;
+    }
+    .upload-zone-card:hover .upload-icon-ring {
+        background: rgba(99,102,241,0.15);
+        border-color: #6366f1;
+        box-shadow: 0 0 20px rgba(99,102,241,0.2);
+    }
+    .drop-title { font-size: 1.15rem; font-weight: 700; color: #1e293b; margin-bottom: 0.3rem; }
+    .drop-hint  { font-size: 0.82rem; color: #64748b; margin-bottom: 1.25rem; }
+
+    .format-chips-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 1.5rem; }
+    .fmt-chip {
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
+        color: #4f46e5;
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 100px;
+        letter-spacing: 0.3px;
     }
 
     .hidden-input { display: none; }
-
-    .upload-label {
-        cursor: pointer;
-        border-radius: 10px !important;
-        padding: 0.75rem 2rem !important;
-        text-transform: none !important;
-        font-size: 1rem;
+    .upload-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        font-size: 0.95rem;
         font-weight: 600;
-        transition: all 0.2s ease !important;
+        padding: 0.75rem 2rem;
+        border-radius: 12px;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+        transition: all 0.2s;
     }
-    .upload-label:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(99,102,241,0.4) !important; }
-    .disabled-label { opacity: 0.65; pointer-events: none; }
+    .upload-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(99,102,241,0.45); }
+    .upload-cta-disabled { opacity: 0.65; pointer-events: none; }
 
-    .format-chip { font-size: 0.7rem !important; }
-
-    .limits-row {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 0.5rem;
-    }
-    .limit-badge {
-        background: rgba(99,102,241,0.08);
-        border: 1px solid rgba(99,102,241,0.2);
-        border-radius: 20px;
-        padding: 0.25rem 0.75rem;
-        font-size: 0.78rem;
+    .limits-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 1rem; }
+    .limit-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: rgba(99,102,241,0.06);
+        border: 1px solid rgba(99,102,241,0.15);
         color: #6366f1;
+        font-size: 0.76rem;
         font-weight: 500;
+        padding: 4px 12px;
+        border-radius: 100px;
     }
 
+    /* ── Progress ── */
     .progress-section {
         background: rgba(99,102,241,0.05);
-        border-radius: 12px;
-        padding: 1rem 1.25rem;
-        border: 1px solid rgba(99,102,241,0.15);
+        border-top: 1px solid rgba(99,102,241,0.1);
+        padding: 1.25rem 1.5rem;
     }
+    .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .progress-file { font-size: 0.88rem; font-weight: 600; color: #4f46e5; }
+    .progress-count { font-size: 0.78rem; color: #64748b; }
+    .progress-status { font-size: 0.78rem; color: #94a3b8; text-align: center; margin-top: 4px; }
 
-    /* Result cards */
-    .result-card { border-radius: 12px !important; }
-    .result-success { border-left: 4px solid #10b981 !important; background: linear-gradient(135deg, #f0fdf4, #ecfdf5) !important; }
-    .result-error   { border-left: 4px solid #ef4444 !important; background: linear-gradient(135deg, #fff5f5, #fef2f2) !important; }
-
+    /* ── Result Cards ── */
+    .result-card {
+        border-radius: 16px;
+        padding: 1.25rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+    .result-success {
+        background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+        border-left: 4px solid #10b981;
+    }
+    .result-error {
+        background: linear-gradient(135deg, #fff5f5, #fef2f2);
+        border-left: 4px solid #ef4444;
+    }
+    .result-card-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 12px;
+    }
     .result-item {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        padding: 0.6rem 0.75rem;
-        margin-bottom: 0.5rem;
-        border-radius: 8px;
+        gap: 10px;
+        padding: 8px 10px;
+        margin-bottom: 6px;
+        border-radius: 10px;
         background: white;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
     }
-    .result-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .result-file-icon { font-size: 1.15rem; flex-shrink: 0; }
     .result-info { flex: 1; min-width: 0; }
-    .result-name {
-        display: block;
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #1e293b;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .result-size {
-        display: block;
-        font-size: 0.75rem;
-        color: #64748b;
-    }
-    .result-error-msg {
-        display: block;
-        font-size: 0.75rem;
-        color: #ef4444;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+    .result-name { display: block; font-size: 0.85rem; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .result-meta { display: block; font-size: 0.74rem; color: #64748b; }
+    .result-error-txt { color: #ef4444; }
 
-    .stat-card {
-        background: white;
+    /* ── Stats Row ── */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+    @@media (max-width: 640px) { .stats-row { grid-template-columns: 1fr; } }
+    .stat-tile {
+        background: rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(12px) saturate(160%);
+        -webkit-backdrop-filter: blur(12px) saturate(160%);
+        border: 1.5px solid rgba(255, 255, 255, 0.5);
+        border-radius: 16px;
         padding: 1.5rem;
-        border-radius: 12px;
         text-align: center;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
         border-top: 4px solid #6366f1;
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .stat-card-success { border-top-color: #10b981 !important; }
-    .stat-value { font-size: 2rem; font-weight: 800; color: #6366f1; margin-bottom: 0.25rem; }
-    .stat-label { font-size: 0.85rem; color: #64748b; font-weight: 500; }
+    .stat-tile:hover {
+        transform: translateY(-2px);
+        border-color: rgba(99, 102, 241, 0.3);
+        box-shadow: 0 12px 36px rgba(99, 102, 241, 0.12);
+    }
+    .stat-tile-ok { border-top-color: #10b981; }
+    .stat-tile-val { font-size: 2rem; font-weight: 800; color: #6366f1; margin-bottom: 0.25rem; }
+    .stat-tile-ok .stat-tile-val { color: #10b981; }
+    .stat-tile-label { font-size: 0.82rem; color: #64748b; font-weight: 500; }
 
-    .doc-card {
+    .mud-theme-dark .stat-tile {
+        background: rgba(13, 22, 42, 0.55);
+        border-color: rgba(255, 255, 255, 0.07);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .mud-theme-dark .stat-tile:hover {
+        border-color: rgba(99, 102, 241, 0.3);
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+    }
+
+    /* ── Section Label ── */
+    .section-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    /* ── Doc Tiles ── */
+    .doc-tile {
+        background: rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(12px) saturate(160%);
+        -webkit-backdrop-filter: blur(12px) saturate(160%);
+        border: 1.5px solid rgba(255, 255, 255, 0.5);
+        border-radius: 14px;
+        padding: 1rem 1.25rem;
         height: 100%;
-        border-top: 4px solid #6366f1;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.3);
     }
-    .doc-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-    .doc-card-tabular { border-top-color: #10b981; }
+    .doc-tile:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 36px rgba(99, 102, 241, 0.15);
+        border-color: #6366f1;
+    }
+    .doc-tile-data { border-top: 3px solid #10b981; }
+    .doc-tile-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 
-    .columns-info {
-        background: linear-gradient(135deg, #f5f7ff 0%, #faf5ff 100%);
-        border-radius: 12px;
+    .mud-theme-dark .doc-tile {
+        background: rgba(13, 22, 42, 0.55);
+        border-color: rgba(255, 255, 255, 0.07);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .mud-theme-dark .doc-tile:hover {
+        border-color: #6366f1;
+        box-shadow: 0 12px 36px rgba(99, 102, 241, 0.25);
+    }
+    .doc-file-icon { font-size: 1.6rem; flex-shrink: 0; }
+    .doc-tile-info { flex: 1; min-width: 0; }
+    .doc-tile-name { font-size: 0.88rem; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .doc-tile-type { font-size: 0.72rem; color: #94a3b8; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .doc-badge {
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 100px;
+        flex-shrink: 0;
+        letter-spacing: 0.5px;
+    }
+    .badge-green  { background: #dcfce7; color: #15803d; }
+    .badge-indigo { background: #e0e7ff; color: #3730a3; }
+    .doc-tile-meta { display: flex; gap: 12px; flex-wrap: wrap; }
+    .doc-tile-meta span { font-size: 0.78rem; color: #64748b; background: #f8fafc; border-radius: 6px; padding: 2px 8px; }
+
+    /* ── Table ── */
+    .table-wrap { border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+
+    /* ── Column Reference ── */
+    .col-ref-card {
+        background: linear-gradient(135deg, #f5f7ff, #faf5ff);
         border-left: 4px solid #6366f1;
+        border-radius: 14px;
+        padding: 1.25rem;
     }
+    .col-ref-title {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 10px;
+    }
+    .col-chips-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .col-chip {
+        background: #e0e7ff;
+        color: #4338ca;
+        font-size: 0.74rem;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 100px;
+    }
+    .col-ref-hint { font-size: 0.78rem; color: #64748b; }
 
-    .go-chat-btn {
-        padding: 1rem 3rem !important;
-        font-size: 1.1rem !important;
-        font-weight: 700 !important;
-        border-radius: 12px !important;
-        text-transform: none !important;
-        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35) !important;
-        transition: all 0.3s ease !important;
+    /* ── Go Chat CTA ── */
+    .go-chat-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white !important;
+        font-size: 1.05rem;
+        font-weight: 700;
+        padding: 1rem 2.5rem;
+        border-radius: 14px;
+        text-decoration: none;
+        box-shadow: 0 6px 24px rgba(99,102,241,0.35);
+        transition: all 0.3s;
     }
-    .go-chat-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(99, 102, 241, 0.45) !important; }
+    .go-chat-cta:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(99,102,241,0.45); }
 
     kbd {
         background: #e2e8f0;
