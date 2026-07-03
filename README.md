@@ -44,8 +44,6 @@ OPENAI_API_KEY=your-openai-key
 GEMINI_API_KEY=your-gemini-key
 GROQ_API_KEY=your-groq-key
 
-# Embedding Model Config
-GEMINI_EMBEDDING_API_KEY=your-gemini-key
 ```
 
 ### 3. Build & Run
